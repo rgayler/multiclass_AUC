@@ -1,0 +1,36 @@
+---
+title: "Home"
+site: workflowr::wflow_site
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+This is the website for the research project "Multiclass AUC".
+
+If you have cloned the project to a local computer this website is
+rendered in the `docs` subdirectory of the project directory.
+
+If you are using `workflowr` to publish the research website it will
+also be rendered online to GitHub Pages.
+
+This page acts as a table of contents for the website. There are links
+to the web pages generated from the analysis notebooks.
+
+------------------------------------------------------------------------
+
+## [01_read_data](01_read_data.html) {.unnumbered}
+
+Read the example datasets, calculate some check counts, reformat the data for analysis, and save to an R data file.
+
+## [02_check_data](02_check_data.html) {.unnumbered}
+
+Check the ranges of the variables in the example data.
+
+## [03_plot_independent_distributions](03_plot_independent_distributions.html) {.unnumbered}
+
+Check the ranges of the variables in the example data.
+
+

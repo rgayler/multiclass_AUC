@@ -1,0 +1,25 @@
+---
+title: "About"
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+This is an open, shareable, reproducible, computational research project on using multiclass AUC as a performance metric for multiclass classification.
+
+It is the work of [Ross W. Gayler](https://www.rossgayler.com/)
+
+It is a common data science task to [classify](https://en.wikipedia.org/wiki/Multiclass_classification) inputs by assigning each input to one of a fixed number of categories.
+Given the existence of a set of inputs with known categories we want to apply the classification model and assess its performance by comparing the assigned categories to the known categories.
+
+[Accuracy](https://en.wikipedia.org/wiki/Accuracy_and_precision#In_multiclass_classification) is a commonly used performance metric.
+However, accuracy assumes that all misclassifications are equally costly and that the base rates of the categories are fixed.
+[Signal Detection Theory](https://en.wikipedia.org/wiki/Detection_theory) (SDT) explicitly addresses these assumptions and [Area Under the Curve](https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve) (AUC) is a common SDT metric of discriminability.
+AUC is most commonly dealt with in the context of binary classification.
+[AUC for multiclass classification](https://en.wikipedia.org/wiki/Receiver_operating_characteristic#ROC_curves_beyond_binary_classification) is much less commonly encountered in practice and there is no commonly accepted agreement on how best to apply it
+
+The objective of this project is to apply multiclass AUC approaches to some trial datasets to get a better understanding of how to apply it and the advantages/disadvantages.
+
+The point of making it an open, shareable, reproducible project is that anyone should be able to copy it, reproduce the analyses, and try out modifications.

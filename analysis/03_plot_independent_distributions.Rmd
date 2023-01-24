@@ -1,0 +1,350 @@
+---
+title: "03_plot_independent_distributions"
+author: "Ross Gayler"
+date: "2023-01-19"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, echo = FALSE,	message = FALSE, warning = FALSE}
+library(here) # relative file locations
+library(dplyr) # data manipulation
+library(forcats) # factor manipulation
+library(ggplot2) # plotting
+library(glue) # string interpolation
+```
+
+### Dependencies
+
+Read the saved example data.
+
+```{r}
+d_scores <- readRDS(file = here::here("output", "d_scores.RDS")) |>
+  # convert case, class_id and score_id to integer factors for safety & better label order
+  dplyr::mutate(
+    case = forcats::as_factor(case),
+    class_id = forcats::as_factor(class_id),
+    score_id = forcats::as_factor(score_id)
+  )
+```
+
+## Introduction
+
+*This analysis is not complete. The text needs to be written.*
+
+Each score (corresponding to a unique value of `score_id`) can be thought of as a feature detector for its target class.
+The score should have a high value when the input case to the model is an exemplar of the target class and a low value when the input case to the model is an exemplar of a non-target class.
+The score can also be thought of as the "decision variable" from Signal detection Theory.
+
+The simple scenario typically used as the introduction to SDT can be thought of as 1-class categorisation.
+There is a single decision-variable/feature-detector and the task is to decide whether a "signal" is present or not.
+The SDT analysis of this scenario is based on comparing the distribution of the decision-variable/score when the signal is present and when it is absent.
+The degree to which the distributions are separated measures the degree to which the signal is discriminable from its absence.
+
+We can apply this SDT framework to our multiclass categorisation task by considering each score ID in isolation.
+That is, we treat the multiclass categorisation task as a collection of $k$ separate class detection tasks, one for each class.
+(There is a problem with this approach, but we'll run with it for now because it's conceptually simple.)
+
+Looking at just one score ID (feature detector) we can plot the distribution of score values whhen the input is the target class and when the input is any other class.
+This is the usual SDT analysis with two distributions.
+We will extend this analysis by plotting a separate distribution of score values for each non-target class.
+We do this because:
+
+-   There is no reason to expect all non-target classes to be inherently equally discriminable from the target class.
+-   The process of building a multiclass categorisation model may favour the discriminability of some clas pairs over others (e.g. optimisation of some goodness of fit function would generally favour the discriminability of the highest frequency class pairs).
+
+This analysis will allow us to evaluate the discriminability of the target class, induced by the corresponding score, with respect to each of the non-target classes.
+Note that these discriminability relationships are not necessarily symmetric.
+The discriminability of class A from class B is not guaranteed to be the same when measured with score A and score B.
+
+Also note that for a given score ID, each of the distributions corresponding to a class ID is necessarily based on separate sets of cases (because the cases must be exemplars of different class IDs).
+This means that the class distributions are independent.
+However, this does not correspond to how the cases and scores are used in practice in the multiclass categorisation task.
+In the task, each single case is scored on each of the score IDs (feature detectors) and the case is categorised as belonging to the class with the highest corresponding score.
+Because all the scores are calculated from the same case it is possible that there are dependencies between the scores (this is the problem flagged earlier).
+
+In fact, it is likely that there are dependencies between the scores.
+If the case has a high score on the score corresponding to one class then it is likely to have low scores on the scores corresponding to the other classes.
+This would mean that the classes are actually more discriminable than implied by the independent class distributions.
+We will ignore the issue of dependency between scores in this analysis notebook.
+
+In this notebook we will plot the distributions of scores as an empirical analysis without calculating numerical summaries or diving into any theoretical models of how to do this.
+This is an extension of the "know your data" philosophy.
+The aim is to identify any qualitative patterns in the data that are noteworthy.
+
+The commentary below is not exhaustive.
+It is intended to reflect some noteworthy patterns in the data without identifying every occurrence.
+
+## Independent distributions of scores
+
+For each score ID within each dataset and model, plot the distributions of score values in response to each class ID.
+Plot the distributions separately for each combination of dataset and score ID to allow space for potentially writing commentary on each combination.
+
+The distribution for the target class ID (corresponding to the score ID) should be higher than the distributions for the non-target class IDs
+
+Create a function to produce the desired plot.
+Each distribution is displayed as [box plot](https://en.wikipedia.org/wiki/Box_plot).
+
+```{r}
+plot_indep_distn <- function(
+    d, # data frame - superset of data to be plotted, compatible with d_scores
+    subset_d, # character[1] - name of dataset to plot
+    subset_s # integer[1] - identifier of score_id to plot
+    # value - ggplot plot object
+) {
+  d <- d |>
+    # subset cases to one combination of dataset and score_id
+    dplyr::filter(dataset == subset_d, score_id == subset_s)
+  
+  # calculate mean cases per class_id in data subset)
+  n_per_class <- nrow(d) / (length(unique(d$model)) * length(unique(d$class_id)))
+  
+  # build plot
+  ggplot(d) +
+    geom_boxplot(aes(x = class_id, y = score_val, fill = class_id == score_id)) +
+    guides(fill = "none") +
+    facet_grid(rows = vars(model)) +
+    labs(
+      title = glue::glue("Dataset: {subset_d}, Score ID: {subset_s}"),
+      subtitle = glue::glue("Mean cases per class: {n_per_class}")
+    ) +
+    xlab("Class ID") + ylab("Score")
+}
+```
+
+### Dataset UCR_14
+
+There are 342 to 350 cases per class in this dataset.
+That's a reasonable number of cases to be visualising distributions with.
+
+#### Score 0
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_14", 0)
+```
+
+* The target class (0) is quite discriminable.
+* The target class is slightly less discriminable from class 1 than the other two non-target classes (class 1 distribution has greater overlap with class 0).
+* With the eye of faith, the class 0 / class 1 discriminability is slightly higher for HDC_MINIROCKET than MINIROCKET (there's slightly less overlap in HDC_MINIROCKET).
+
+#### Score 1
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_14", 1)
+```
+
+#### Score 2
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_14", 2)
+```
+
+* Possibly the most discriminating score (the separation of the target distribution from the non-target distributions seems larger than for the other scores).
+
+#### Score 3
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_14", 3)
+```
+
+* Possibly the least discriminating score (the separation of the target distribution from the non-target distributions seems smaller than for the other scores).
+
+### Dataset UCR_48
+
+Note that there are only **5 cases per class** in this dataset.
+That's a *very* small number to be visualising distributions with.
+Expecting boxplots based on 5 cases to be interpretable is rather optimistic
+
+I expect the distributions to be very noisy, making them more uncertain for interpretation.
+This could be assessed more rigorously using bootstrap sampling.
+However, for the purposes of the current analysis i will not take that uncertainty into account and will take the distributions at face value for interpretation.
+
+#### Score 0
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 0)
+```
+
+* The target class (0) appears to be quite discriminable from the non-target classes.
+
+#### Score 1
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 1)
+```
+
+* The target class (1) is not strongly discriminable from the other classes.
+* In particular, the target class is confusable with classes 15, 22, and 25.
+
+#### Score 2
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 2)
+```
+
+* This is possibly even less discriminating than score 1.
+The score distribution of the target class (2) appears even less separated from the score distributions of the other classes.
+* The target class (2) is very confusable with classes 6, 11, and 20.
+
+#### Score 3
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 3)
+```
+
+#### Score 4
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 4)
+```
+
+#### Score 5
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 5)
+```
+
+* Score 5 is exceptionally good at discriminating class 5 from all the other classes.
+This appears to be the most discriminating score.
+
+#### Score 6
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 6)
+```
+
+#### Score 7
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 7)
+```
+
+#### Score 8
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 8)
+```
+
+#### Score 9
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 9)
+```
+
+#### Score 10
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 10)
+```
+
+#### Score 11
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 11)
+```
+
+#### Score 12
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 12)
+```
+
+* Score 12 is exceptionally good at discriminating class 12 from all the other classes.
+I guess this appears to be the most second most discriminating score (after score 5).
+
+#### Score 13
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 13)
+```
+
+#### Score 14
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 14)
+```
+
+#### Score 15
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 15)
+```
+
+#### Score 16
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 16)
+```
+
+#### Score 17
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 17)
+```
+
+#### Score 18
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 18)
+```
+
+* This case indicates that discriminability is not a property of classes in isolation.
+It is a joint property of the score and class.
+For the MINIROCKET model, score 18 is mostly unable to discriminate the target class (18) from class 5.
+However, score 5 was able to perfectly discriminate class 5 from all other classes.
+So, it's not reasonable to make an isolated conclusion that class 5 is inherently easily discriminable.
+
+#### Score 19
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 19)
+```
+
+#### Score 20
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 20)
+```
+
+* Score 20 is possibly the least discriminating score.
+There are possibly 6 classes with score distributions strongly overlapping the score distribution of the target class (20).
+
+#### Score 21
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 21)
+```
+
+#### Score 22
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 22)
+```
+
+#### Score 23
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 23)
+```
+
+#### Score 24
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 24)
+```
+
+#### Score 25
+
+```{r echo=FALSE}
+plot_indep_distn(d_scores, "UCR_48", 25)
+```
+
+## Discussion
+
+* The class score distributions give an idea about discriminability of the classes with respect to the different scores.
+* The scores generally discriminate their target classes from the non-target classes.
+* The degree of discriminability varies. Some target classes are excellently discriminated whereas others are poorly discriminated.
+* Within a given score ID the discriminability of non-target classes from the traget class can vary significantly.
+* The analyses in this notebook have ignored the possible dependency between scores within the same case.
+I suspect that this underestimates the true discriminability of the multiclass categorisation task.

@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Ross Gayler" />
+
+<meta name="date" content="2023-01-12" />
+
+<title>01_read_data</title>
+
+<script src="site_libs/header-attrs-2.20/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Multiclass AUC</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/rgayler/multiclass_AUC">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">01_read_data</h1>
+<h4 class="author">Ross Gayler</h4>
+<h4 class="date">2023-01-12</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2023-01-24
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>multiclass_AUC/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20230112code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20230112)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20230112code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20230112)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongNocommitsyet">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong> No
+commits yet </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongNocommitsyet"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+
+Untracked files:
+    Untracked:  .Rprofile
+    Untracked:  .gitattributes
+    Untracked:  .gitignore
+    Untracked:  LICENSE.CC-BY
+    Untracked:  LICENSE.MIT
+    Untracked:  README.html
+    Untracked:  README.md
+    Untracked:  _workflowr.yml
+    Untracked:  analysis/
+    Untracked:  code/
+    Untracked:  data/
+    Untracked:  multiclass_AUC.Rproj
+    Untracked:  output/
+    Untracked:  renv.lock
+    Untracked:  renv/
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with
+<code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Read the raw data from all the data files, reshape it into a more
+useful format, save it as an R object, and provide a summary of the
+contents to give some assurance that the data was read correctly.</p>
+<div id="data-organisation" class="section level3">
+<h3>Data organisation</h3>
+<p>The data are generated by applying models to some of the test
+datasets from the <a
+href="https://www.timeseriesclassification.com/index.php">UCR Time
+Series Classification Repository</a>. All the models are classification
+models, that is, they assign each case to one of a fixed set of
+dataset-specific classes.</p>
+<p>All the models of interest here map each case to a vector of scores,
+one for each class. The case is categorised as belonging to the class
+with the highest score.</p>
+<p>All the raw data are stored in <code>data/UCR_Data_Scores</code>.</p>
+<p>There is a separate subdirectory of <code>data/UCR_Data_Scores</code>
+for each dataset analysed
+(e.g. <code>data/UCR_Data_Scores/UCR_14</code>).</p>
+<p>The datasets used are shown in the table below. (The table has to be
+manually populated.)</p>
+<table>
+<caption>Table of dataset names and links to their online
+descriptions.</caption>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="49%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Dataset</th>
+<th>Name</th>
+<th>Description page</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>UCR_14</td>
+<td>CinCECGTorso</td>
+<td><a
+href="https://www.timeseriesclassification.com/description.php?Dataset=CinCECGTorso"
+class="uri">https://www.timeseriesclassification.com/description.php?Dataset=CinCECGTorso</a></td>
+</tr>
+<tr class="even">
+<td>UCR_48</td>
+<td>GestureMidAirD3</td>
+<td><a
+href="https://www.timeseriesclassification.com/description.php?Dataset=GestureMidAirD3"
+class="uri">https://www.timeseriesclassification.com/description.php?Dataset=GestureMidAirD3</a></td>
+</tr>
+</tbody>
+</table>
+<p>In the subdirectory for each dataset analysed there are multiple
+files, each corresponding to the application of a single model to that
+dataset. The file naming convention is
+<code>ModelName_test_results.csv</code>
+(e.g. <code>MINIROCKET_test_results.csv</code>).</p>
+<p>Each data file is a CSV with <span class="math inline">\(k +
+1\)</span> columns, where <span class="math inline">\(k\)</span> is the
+number of classes.</p>
+<p>Each row corresponds to a case from the UCR dataset that has been
+processed by the model corresponding to the file.</p>
+<p>The first column contains an integer in the range <span
+class="math inline">\([0, k - 1]\)</span>, indicating which of the <span
+class="math inline">\(k\)</span> classes is the “true” class of the
+case.</p>
+<p>The remaining <span class="math inline">\(k\)</span> columns are the
+class scores for the case for each of the classes in order from <span
+class="math inline">\(0\)</span> to <span class="math inline">\(k -
+1\)</span>.</p>
+</div>
+<div id="output-organisation" class="section level3">
+<h3>Output organisation</h3>
+<p>The data from all the UCR datasets is concatenated into a single R
+data frame and saved as an RDS file
+(<code>output/d_scores.RDS</code>).</p>
+<p>Different datasets have different numbers of classes, so the data is
+pivoted from wide to tall format to enable concatenation of the datasets
+into a single data frame.</p>
+<p>The columns of the data frame are: <code>dataset</code>,
+<code>model</code>, <code>class_id</code>, <code>score_id</code>,
+<code>score_val</code>.</p>
+</div>
+</div>
+<div id="get-the-file-names" class="section level2">
+<h2>Get the file names</h2>
+<p>Get the names of all the data files and extract the dataset and model
+names.</p>
+<pre class="r"><code>d_files &lt;- here::here(&quot;data/UCR_Data_Scores&quot;) |&gt;
+  fs::dir_ls(glob = &quot;*_test_results.csv&quot;, recurse = 1) |&gt;
+  tibble::as_tibble_col(column_name = &quot;path&quot;) |&gt;
+  dplyr::arrange(path) |&gt;
+  dplyr::mutate(
+    dataset = fs::path_dir(path) |&gt;
+      stringr::str_remove(pattern = &quot;.*/&quot;),
+    model = fs::path_file(path) |&gt;
+      stringr::str_remove(pattern = &quot;_test_results\\.csv&quot;),
+  )
+
+# quick view of the data files to be read
+d_files</code></pre>
+<pre><code># A tibble: 4 × 3
+  path                                                             dataset model
+  &lt;fs::path&gt;                                                       &lt;chr&gt;   &lt;chr&gt;
+1 …AUC/data/UCR_Data_Scores/UCR_14/HDC_MINIROCKET_test_results.csv UCR_14  HDC_…
+2 …ass_AUC/data/UCR_Data_Scores/UCR_14/MINIROCKET_test_results.csv UCR_14  MINI…
+3 …AUC/data/UCR_Data_Scores/UCR_48/HDC_MINIROCKET_test_results.csv UCR_48  HDC_…
+4 …ass_AUC/data/UCR_Data_Scores/UCR_48/MINIROCKET_test_results.csv UCR_48  MINI…</code></pre>
+</div>
+<div id="read-the-files" class="section level2">
+<h2>Read the files</h2>
+<p>Create a function to read one file and reformat it.</p>
+<pre class="r"><code>read_1 &lt;- function(
+    path, # character - path of file to read
+    dataset, # character - ID of dataset
+    model # character - name of model applied to dataset
+) {
+  # read the file
+  d &lt;- readr::read_csv(path, col_names = FALSE, show_col_types = FALSE)
+  
+  # rename the columns
+  n_class &lt;- ncol(d) - 1 # 1 column for each class score plus 1 for the true class
+  colnames(d) &lt;- c(&quot;class_id&quot;, paste0(&quot;score_&quot;, 0:(n_class - 1))) # 0-origin class indexing
+  
+  d |&gt;
+    # add file identifiers and within-file case numbers
+    dplyr::mutate(
+      dataset = dataset,
+      model = model,
+      case = 1:n(),
+      # force the types for neatness
+      class_id = as.integer(class_id)
+    ) |&gt;
+    # reformat to long
+    tidyr::pivot_longer( 
+      cols = tidyr::starts_with(&quot;score_&quot;), 
+      names_to = &quot;score_id&quot;,
+      names_prefix = &quot;score_&quot;,
+      values_to = &quot;score_val&quot;
+    ) |&gt;
+    dplyr::mutate(
+      # force the types for neatness
+      score_id = as.integer(score_id)
+    ) |&gt;
+    # reorder the columns for more intuitive display
+    dplyr::relocate(dataset, model, case)
+}</code></pre>
+<p>Read all the files and concatenate them.</p>
+<pre class="r"><code>d_scores &lt;- purrr::pmap_dfr(.l = d_files, .f = read_1)
+
+# quick view of the data that was read
+d_scores</code></pre>
+<pre><code># A tibble: 17,800 × 6
+   dataset model           case class_id score_id score_val
+   &lt;chr&gt;   &lt;chr&gt;          &lt;int&gt;    &lt;int&gt;    &lt;int&gt;     &lt;dbl&gt;
+ 1 UCR_14  HDC_MINIROCKET     1        1        0    -0.636
+ 2 UCR_14  HDC_MINIROCKET     1        1        1     0.380
+ 3 UCR_14  HDC_MINIROCKET     1        1        2    -1.14 
+ 4 UCR_14  HDC_MINIROCKET     1        1        3    -0.604
+ 5 UCR_14  HDC_MINIROCKET     2        3        0    -1.03 
+ 6 UCR_14  HDC_MINIROCKET     2        3        1    -0.633
+ 7 UCR_14  HDC_MINIROCKET     2        3        2    -0.560
+ 8 UCR_14  HDC_MINIROCKET     2        3        3     0.219
+ 9 UCR_14  HDC_MINIROCKET     3        2        0    -1.21 
+10 UCR_14  HDC_MINIROCKET     3        2        1    -1.06 
+# … with 17,790 more rows</code></pre>
+<p>Save the concatenated data.</p>
+<pre class="r"><code>d_scores |&gt; saveRDS(file = here::here(&quot;output&quot;, &quot;d_scores.RDS&quot;))</code></pre>
+</div>
+<div id="get-check-summaries" class="section level2">
+<h2>Get check summaries</h2>
+<p>Calculate the number of observations, classes, and scores per file as
+a basic check. These need to be manually checked against the metadata
+for the datasets.</p>
+<pre class="r"><code>d_scores |&gt;
+  dplyr::group_by(dataset, model) |&gt;
+  dplyr::summarise(
+    n_case = max(case),
+    min_class_id = min(class_id),
+    max_class_id = max(class_id),
+    n_class_id = unique(class_id) |&gt; length(),
+    min_score_id = min(score_id),
+    max_score_id = max(score_id),
+    n_score_id = unique(score_id) |&gt; length()
+  ) |&gt;
+  gt::gt()</code></pre>
+<pre><code>`summarise()` has grouped output by &#39;dataset&#39;. You can override using the
+`.groups` argument.</code></pre>
+<div id="axqmpfmnhc" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#axqmpfmnhc .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#axqmpfmnhc .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#axqmpfmnhc .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#axqmpfmnhc .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#axqmpfmnhc .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#axqmpfmnhc .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#axqmpfmnhc .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#axqmpfmnhc .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#axqmpfmnhc .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#axqmpfmnhc .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#axqmpfmnhc .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#axqmpfmnhc .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#axqmpfmnhc .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#axqmpfmnhc .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#axqmpfmnhc .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#axqmpfmnhc .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#axqmpfmnhc .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#axqmpfmnhc .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#axqmpfmnhc .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#axqmpfmnhc .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#axqmpfmnhc .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#axqmpfmnhc .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#axqmpfmnhc .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#axqmpfmnhc .gt_left {
+  text-align: left;
+}
+
+#axqmpfmnhc .gt_center {
+  text-align: center;
+}
+
+#axqmpfmnhc .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#axqmpfmnhc .gt_font_normal {
+  font-weight: normal;
+}
+
+#axqmpfmnhc .gt_font_bold {
+  font-weight: bold;
+}
+
+#axqmpfmnhc .gt_font_italic {
+  font-style: italic;
+}
+
+#axqmpfmnhc .gt_super {
+  font-size: 65%;
+}
+
+#axqmpfmnhc .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 75%;
+  vertical-align: 0.4em;
+}
+
+#axqmpfmnhc .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#axqmpfmnhc .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#axqmpfmnhc .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#axqmpfmnhc .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#axqmpfmnhc .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#axqmpfmnhc .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table">
+  
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="model">model</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="n_case">n_case</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="min_class_id">min_class_id</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="max_class_id">max_class_id</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="n_class_id">n_class_id</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="min_score_id">min_score_id</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="max_score_id">max_score_id</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="n_score_id">n_score_id</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr class="gt_group_heading_row">
+      <th colspan="8" class="gt_group_heading" scope="colgroup" id="UCR_14">UCR_14</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="UCR_14  model" class="gt_row gt_left">HDC_MINIROCKET</td>
+<td headers="UCR_14  n_case" class="gt_row gt_right">1380</td>
+<td headers="UCR_14  min_class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_14  max_class_id" class="gt_row gt_right">3</td>
+<td headers="UCR_14  n_class_id" class="gt_row gt_right">4</td>
+<td headers="UCR_14  min_score_id" class="gt_row gt_right">0</td>
+<td headers="UCR_14  max_score_id" class="gt_row gt_right">3</td>
+<td headers="UCR_14  n_score_id" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14  model" class="gt_row gt_left">MINIROCKET</td>
+<td headers="UCR_14  n_case" class="gt_row gt_right">1380</td>
+<td headers="UCR_14  min_class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_14  max_class_id" class="gt_row gt_right">3</td>
+<td headers="UCR_14  n_class_id" class="gt_row gt_right">4</td>
+<td headers="UCR_14  min_score_id" class="gt_row gt_right">0</td>
+<td headers="UCR_14  max_score_id" class="gt_row gt_right">3</td>
+<td headers="UCR_14  n_score_id" class="gt_row gt_right">4</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="8" class="gt_group_heading" scope="colgroup" id="UCR_48">UCR_48</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="UCR_48  model" class="gt_row gt_left">HDC_MINIROCKET</td>
+<td headers="UCR_48  n_case" class="gt_row gt_right">130</td>
+<td headers="UCR_48  min_class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_48  max_class_id" class="gt_row gt_right">25</td>
+<td headers="UCR_48  n_class_id" class="gt_row gt_right">26</td>
+<td headers="UCR_48  min_score_id" class="gt_row gt_right">0</td>
+<td headers="UCR_48  max_score_id" class="gt_row gt_right">25</td>
+<td headers="UCR_48  n_score_id" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48  model" class="gt_row gt_left">MINIROCKET</td>
+<td headers="UCR_48  n_case" class="gt_row gt_right">130</td>
+<td headers="UCR_48  min_class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_48  max_class_id" class="gt_row gt_right">25</td>
+<td headers="UCR_48  n_class_id" class="gt_row gt_right">26</td>
+<td headers="UCR_48  min_score_id" class="gt_row gt_right">0</td>
+<td headers="UCR_48  max_score_id" class="gt_row gt_right">25</td>
+<td headers="UCR_48  n_score_id" class="gt_row gt_right">26</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p><em>That looks as expected.</em></p>
+<p>Calculate the number of observations and scores for each class in
+each file. These need to be manually checked against the metadata for
+the datasets.</p>
+<pre class="r"><code>d_scores |&gt;
+  dplyr::group_by(dataset, model, class_id) |&gt;
+  dplyr::summarise(
+    n_case = unique(case) |&gt; length(),
+    n_score = unique(score_id) |&gt; length()
+  ) |&gt;
+  gt::gt()</code></pre>
+<pre><code>`summarise()` has grouped output by &#39;dataset&#39;, &#39;model&#39;. You can override using
+the `.groups` argument.</code></pre>
+<div id="blobutvame" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#blobutvame .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#blobutvame .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#blobutvame .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#blobutvame .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#blobutvame .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#blobutvame .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#blobutvame .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#blobutvame .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#blobutvame .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#blobutvame .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#blobutvame .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#blobutvame .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#blobutvame .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#blobutvame .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#blobutvame .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#blobutvame .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#blobutvame .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#blobutvame .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#blobutvame .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#blobutvame .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#blobutvame .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#blobutvame .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#blobutvame .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#blobutvame .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#blobutvame .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#blobutvame .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#blobutvame .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#blobutvame .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#blobutvame .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#blobutvame .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#blobutvame .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#blobutvame .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#blobutvame .gt_left {
+  text-align: left;
+}
+
+#blobutvame .gt_center {
+  text-align: center;
+}
+
+#blobutvame .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#blobutvame .gt_font_normal {
+  font-weight: normal;
+}
+
+#blobutvame .gt_font_bold {
+  font-weight: bold;
+}
+
+#blobutvame .gt_font_italic {
+  font-style: italic;
+}
+
+#blobutvame .gt_super {
+  font-size: 65%;
+}
+
+#blobutvame .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 75%;
+  vertical-align: 0.4em;
+}
+
+#blobutvame .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#blobutvame .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#blobutvame .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#blobutvame .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#blobutvame .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#blobutvame .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table">
+  
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="class_id">class_id</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="n_case">n_case</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="n_score">n_score</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr class="gt_group_heading_row">
+      <th colspan="3" class="gt_group_heading" scope="colgroup" id="UCR_14 - HDC_MINIROCKET">UCR_14 - HDC_MINIROCKET</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="UCR_14 - HDC_MINIROCKET  class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_case" class="gt_row gt_right">350</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14 - HDC_MINIROCKET  class_id" class="gt_row gt_right">1</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_case" class="gt_row gt_right">343</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14 - HDC_MINIROCKET  class_id" class="gt_row gt_right">2</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_case" class="gt_row gt_right">345</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14 - HDC_MINIROCKET  class_id" class="gt_row gt_right">3</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_case" class="gt_row gt_right">342</td>
+<td headers="UCR_14 - HDC_MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="3" class="gt_group_heading" scope="colgroup" id="UCR_14 - MINIROCKET">UCR_14 - MINIROCKET</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="UCR_14 - MINIROCKET  class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_14 - MINIROCKET  n_case" class="gt_row gt_right">350</td>
+<td headers="UCR_14 - MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14 - MINIROCKET  class_id" class="gt_row gt_right">1</td>
+<td headers="UCR_14 - MINIROCKET  n_case" class="gt_row gt_right">343</td>
+<td headers="UCR_14 - MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14 - MINIROCKET  class_id" class="gt_row gt_right">2</td>
+<td headers="UCR_14 - MINIROCKET  n_case" class="gt_row gt_right">345</td>
+<td headers="UCR_14 - MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="UCR_14 - MINIROCKET  class_id" class="gt_row gt_right">3</td>
+<td headers="UCR_14 - MINIROCKET  n_case" class="gt_row gt_right">342</td>
+<td headers="UCR_14 - MINIROCKET  n_score" class="gt_row gt_right">4</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="3" class="gt_group_heading" scope="colgroup" id="UCR_48 - HDC_MINIROCKET">UCR_48 - HDC_MINIROCKET</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">1</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">2</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">3</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">4</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">6</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">7</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">8</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">9</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">10</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">11</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">12</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">13</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">14</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">15</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">16</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">17</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">18</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">19</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">20</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">21</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">22</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">23</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">24</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - HDC_MINIROCKET  class_id" class="gt_row gt_right">25</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - HDC_MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="3" class="gt_group_heading" scope="colgroup" id="UCR_48 - MINIROCKET">UCR_48 - MINIROCKET</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">0</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">1</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">2</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">3</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">4</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">6</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">7</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">8</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">9</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">10</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">11</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">12</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">13</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">14</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">15</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">16</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">17</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">18</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">19</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">20</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">21</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">22</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">23</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">24</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+    <tr><td headers="UCR_48 - MINIROCKET  class_id" class="gt_row gt_right">25</td>
+<td headers="UCR_48 - MINIROCKET  n_case" class="gt_row gt_right">5</td>
+<td headers="UCR_48 - MINIROCKET  n_score" class="gt_row gt_right">26</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p><em>That looks as expected.</em></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.2.2 Patched (2022-11-10 r83330)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 22.04.1 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
+
+locale:
+ [1] LC_CTYPE=en_AU.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_AU.UTF-8        LC_COLLATE=en_AU.UTF-8    
+ [5] LC_MONETARY=en_AU.UTF-8    LC_MESSAGES=en_AU.UTF-8   
+ [7] LC_PAPER=en_AU.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_AU.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices datasets  utils     methods   base     
+
+other attached packages:
+ [1] gt_0.8.0        purrr_1.0.1     tidyr_1.2.1     readr_2.1.3    
+ [5] stringr_1.5.0   dplyr_1.0.10    tibble_3.1.8    fs_1.5.2       
+ [9] here_1.0.1      workflowr_1.7.0
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.2.0 xfun_0.36        bslib_0.4.2      colorspace_2.0-3
+ [5] vctrs_0.5.1      generics_0.1.3   htmltools_0.5.4  yaml_2.3.6      
+ [9] utf8_1.2.2       rlang_1.0.6      jquerylib_0.1.4  later_1.3.0     
+[13] pillar_1.8.1     withr_2.5.0      glue_1.6.2       bit64_4.0.5     
+[17] lifecycle_1.0.3  munsell_0.5.0    gtable_0.3.1     evaluate_0.20   
+[21] knitr_1.41       callr_3.7.3      tzdb_0.3.0       fastmap_1.1.0   
+[25] httpuv_1.6.8     ps_1.7.2         parallel_4.2.2   fansi_1.0.3     
+[29] Rcpp_1.0.9       scales_1.2.1     renv_0.16.0      promises_1.2.0.1
+[33] cachem_1.0.6     vroom_1.6.0      jsonlite_1.8.4   bit_4.0.5       
+[37] ggplot2_3.4.0    hms_1.1.2        digest_0.6.31    stringi_1.7.12  
+[41] processx_3.8.0   getPass_0.2-2    rprojroot_2.0.3  grid_4.2.2      
+[45] cli_3.6.0        tools_4.2.2      magrittr_2.0.3   sass_0.4.4      
+[49] crayon_1.5.2     whisker_0.4.1    pkgconfig_2.0.3  ellipsis_0.3.2  
+[53] rmarkdown_2.20   httr_1.4.4       rstudioapi_0.14  R6_2.5.1        
+[57] git2r_0.30.1     compiler_4.2.2  </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "site_libs/mathjax-local/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

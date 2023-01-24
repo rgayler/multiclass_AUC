@@ -1,0 +1,47 @@
+---
+title: "02_check_data"
+author: "Ross Gayler"
+date: "2023-01-16"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, echo = FALSE,	message = FALSE, warning = FALSE}
+library(here) # relative file locations
+library(dplyr) # data manipulation
+library(forcats) # factor manipulation
+library(skimr) # data summaries
+```
+
+### Dependencies
+
+Read the saved example data.
+
+```{r}
+d_scores <- readRDS(file = here::here("output", "d_scores.RDS")) |>
+  # convert case, class_id and score_id to integer factors for safety & better label order
+  dplyr::mutate(
+    case = forcats::as_factor(case),
+    class_id = forcats::as_factor(class_id),
+    score_id = forcats::as_factor(score_id)
+  )
+```
+
+## Introduction
+
+Check the ranges of the variables in the example data.
+This is a matter of standard practice for me.
+I never analyse data without first getting a general appreciation for the data.
+
+## Compact summaries
+
+Show compact summaries of the variables, grouped by dataset and model.
+
+```{r}
+d_scores |>
+  dplyr::group_by(dataset, model) |>
+  skimr::skim()
+```
+
+*That looks as expected.*
