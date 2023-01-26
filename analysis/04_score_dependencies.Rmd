@@ -1,0 +1,189 @@
+---
+title: "04_score_dependencies"
+author: "Ross Gayler"
+date: "2023-01-24"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, echo = FALSE,	message = FALSE, warning = FALSE}
+library(here) # relative file locations
+library(dplyr) # data manipulation
+library(forcats) # factor manipulation
+library(tidyr) # data tidying
+library(rlang) # R language around nonstandard evaluation of arguments
+library(ggplot2) # plotting
+library(glue) # string interpolation
+```
+
+### Dependencies
+
+Read the saved example data.
+
+```{r}
+d_scores <- readRDS(file = here::here("output", "d_scores.RDS")) |>
+  # convert case, class_id and score_id to integer factors for safety & better label order
+  dplyr::mutate(
+    case = forcats::as_factor(case),
+    class_id = forcats::as_factor(class_id),
+    score_id = forcats::as_factor(score_id)
+  )
+```
+
+## Introduction
+
+The previous notebook pointed out that for each case, $k$-many scores are calculated.
+All these scores are calculated from the data of the same case, so there are potentially dependencies between the scores.
+In fact, we expect there to be dependencies because the models are trained so that the score corresponding to the input class is relatively high and all the other scores are relatively low.
+
+The objective of this notebook is to investigate these expected dependencies between scores calculated from the same case.
+
+## Scatterplots of within-case scores
+
+We will investigate the dependency by plotting scatterplots, so we are limited to plotting only two of the $k$ scores on any one plot.
+We will map one score to the $x$ axis and the other to the $y$ axis, so call them $score_x$ and $score_y$ respectively.
+For simplicity, consider the case of a perfectly discriminating system.
+Assume that each score has the value 1 when the input is from the target class and has the value 0 when the input is from any other class.
+
+When the input is from $class_x$, then $score_x$ will be 1 and all the other scores, including $score_y$ will be 0.
+This point will plot at position $(1,0)$.
+When the input is from $class_y$, then $score_y$ will be 1 and all the other scores, including $score_x$ will be 0.
+This point will plot at position $(0,1)$.
+When the input is from some class other than $class_x$ or $class_y$, then both $score_x$ $score_y$ will be 0.
+This point will plot at position $(0,0)$.
+So the expected pattern is for points to be at the top-left, bottom-right, and bottom-left corners, respectively.
+We expect there to be no points at the top-right $(1,1)$ corner.
+Assuming the scores are performing reasonably but not perfectly we expect the points to generally fall below the $(0,1)$ to $(1,0)$ diagonal.
+
+The following plots examine whether this pattern holds for a convenience sample of score pairs across data sets.
+The objective hear is to demonstrate the plausibility of the pattern rather than to perform diagnostics of the models,
+so the sample of pairs is not exhaustive.
+
+Create a function to produce the desired plot.
+
+Note that the scores in the sample datasets are not scaled into the range $[0,1]$.
+The plots are scaled to the actual ranges of the scores.
+
+```{r}
+plot_score_pair_within_case <- function(
+    d, # data frame - superset of data to be plotted, compatible with d_scores
+    subset_d, # character[1] - name of dataset to plot
+    subset_m, # character[1] - name of model to plot
+    score_x, # integer[1] - identifier of score_id to plot on x axis
+    score_y, # integer[1] - identifier of score_id to plot on y axis
+    legend = TRUE # logical[1] - whether to display the class_id legend
+    # value - ggplot plot object
+) {
+  d <- d |>
+    dplyr::filter(dataset == subset_d & model == subset_m) |>
+    tidyr::pivot_wider(
+      id_cols = c(dataset, model, case, class_id),
+      names_from = score_id,
+      values_from = score_val,
+      names_prefix = "score_"
+    )
+  
+  # calculate mean cases per class_id in data subset
+  n_per_class <- nrow(d) / length(unique(d$class_id))
+  
+  # build plot
+  ggplot(d) +
+    geom_point(aes(x = {{score_x}}, y = {{score_y}}, colour = class_id)) +
+    geom_density2d(aes(x = {{score_x}}, y = {{score_y}}), show.legend = FALSE) +
+    guides(colour = ifelse(legend, "legend", "none")) +
+    coord_equal() +
+    labs(
+      title = glue::glue("Dataset: {subset_d}, Model: {subset_m}"),
+      subtitle = glue::glue("Mean cases per class: {n_per_class}")
+    )
+}
+```
+
+### Dataset UCR_14, Model HDC_MINIROCKET
+
+There are 342 to 350 cases per class in this dataset.
+That's a reasonable number of cases to be visualising distributions with.
+
+#### Score 0, Score 2
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_14", "HDC_MINIROCKET", score_0, score_2)
+```
+
+* This is possibly the closest to the perfect example, with three relatively discrete clusters.
+
+#### Score 2, Score 3
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_14", "HDC_MINIROCKET", score_2, score_3)
+```
+
+* Spreading along one edge. That is, one of the scores of interest is not well separable with respect to at least one of the classes not corresponding to either score of interest.
+
+#### Score 0, Score 3
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_14", "HDC_MINIROCKET", score_0, score_3)
+```
+
+* Spreading along both edges. That is, both the scores of interest are not well separable with respect to at least one of the classes not corresponding to either score of interest.
+
+#### Score 1, Score 3
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_14", "HDC_MINIROCKET", score_1, score_3)
+```
+
+* Spreading along the diagonal. That is, both the scores of interest are not well separable with respect to their corresponding classes.
+The two classes corresponding to the scores of interest are seen by their scores as effectively opposite ends of one dimension, rather than as separate dimensions.
+
+### Dataset UCR_14, Model MINIROCKET
+
+There are 342 to 350 cases per class in this dataset.
+That's a reasonable number of cases to be visualising distributions with.
+
+#### Score 1, Score 3
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_14", "MINIROCKET", score_1, score_3)
+```
+
+* Filling the entire are below the diagonal.
+
+### Dataset UCR_48, Model HDC_MINIROCKET
+
+There are only 5 cases per class in this dataset.
+That's a heroic number of cases to attempt visualising distributions with.
+Also, because there are 26 classes, there are literally hundreds of combinations of two scores.
+So, the plots below are definitely a tiny subset of the subjectively interesting score combinations.
+
+#### Score 0, Score 5
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_48", "HDC_MINIROCKET", score_0, score_5, legend = FALSE)
+```
+
+* Reasonable discriminability of both scores of interest.
+
+#### Score 21, Score 22
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_48", "HDC_MINIROCKET", score_21, score_22, legend = FALSE)
+```
+
+* A pleasingly lower-off-diagonal pattern.
+
+#### Score 1, Score 4
+
+```{r echo=FALSE}
+plot_score_pair_within_case(d_scores, "UCR_48", "HDC_MINIROCKET", score_1, score_4, legend = FALSE)
+```
+
+* *Not* restricted to the lower-off-diagonal.
+
+## Discussion
+
+The scores generally abide by the expected within-case dependencies.
+I spotted a small number of score combinations that didn't appear to show the expected dependency.
+However, these also appeared to be cases involving low discriminability, in which case the expected dependency structure is not really expected.

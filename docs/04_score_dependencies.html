@@ -11,9 +11,9 @@
 
 <meta name="author" content="Ross Gayler" />
 
-<meta name="date" content="2023-01-16" />
+<meta name="date" content="2023-01-24" />
 
-<title>02_check_data</title>
+<title>04_score_dependencies</title>
 
 <script src="site_libs/header-attrs-2.20/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -359,9 +359,9 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">02_check_data</h1>
+<h1 class="title toc-ignore">04_score_dependencies</h1>
 <h4 class="author">Ross Gayler</h4>
-<h4 class="date">2023-01-16</h4>
+<h4 class="date">2023-01-24</h4>
 
 </div>
 
@@ -576,11 +576,11 @@ have uncommitted changes.
 
 <p>
 These are the previous versions of the repository in which changes were
-made to the R Markdown (<code>analysis/02_check_data.Rmd</code>) and
-HTML (<code>docs/02_check_data.html</code>) files. If you’ve configured
-a remote Git repository (see <code>?wflow_git_remote</code>), click on
-the hyperlinks in the table below to view the files as they were in that
-past version.
+made to the R Markdown (<code>analysis/04_score_dependencies.Rmd</code>)
+and HTML (<code>docs/04_score_dependencies.html</code>) files. If you’ve
+configured a remote Git repository (see <code>?wflow_git_remote</code>),
+click on the hyperlinks in the table below to view the files as they
+were in that past version.
 </p>
 <div class="table-responsive">
 <table class="table table-condensed table-hover">
@@ -606,87 +606,19 @@ Message
 <tbody>
 <tr>
 <td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/rgayler/multiclass_AUC/d56514f11913b929621207cf6021b1f3de04fb24/docs/02_check_data.html" target="_blank">d56514f</a>
-</td>
-<td>
-Ross Gayler
-</td>
-<td>
-2023-01-26
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/rgayler/multiclass_AUC/8202503d8180ded4da0ca4cfcbb7884a9e568454/docs/02_check_data.html" target="_blank">8202503</a>
-</td>
-<td>
-Ross Gayler
-</td>
-<td>
-2023-01-26
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/rgayler/multiclass_AUC/c16485d998f76434427ada138530b4de9ecbe764/docs/02_check_data.html" target="_blank">c16485d</a>
-</td>
-<td>
-Ross Gayler
-</td>
-<td>
-2023-01-26
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
 Rmd
 </td>
 <td>
-<a href="https://github.com/rgayler/multiclass_AUC/blob/0cdb34ab66eb57e726d96e6552ee2ac3bcc70f0a/analysis/02_check_data.Rmd" target="_blank">0cdb34a</a>
+<a href="https://github.com/rgayler/multiclass_AUC/blob/8202503d8180ded4da0ca4cfcbb7884a9e568454/analysis/04_score_dependencies.Rmd" target="_blank">8202503</a>
 </td>
 <td>
 Ross Gayler
 </td>
 <td>
-2023-01-24
+2023-01-26
 </td>
 <td>
-Initial commit
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/rgayler/multiclass_AUC/0cdb34ab66eb57e726d96e6552ee2ac3bcc70f0a/docs/02_check_data.html" target="_blank">0cdb34a</a>
-</td>
-<td>
-Ross Gayler
-</td>
-<td>
-2023-01-24
-</td>
-<td>
-Initial commit
+Build site.
 </td>
 </tr>
 </tbody>
@@ -709,303 +641,181 @@ Initial commit
 </div>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>Check the ranges of the variables in the example data. This is a
-matter of standard practice for me. I never analyse data without first
-getting a general appreciation for the data.</p>
+<p>The previous notebook pointed out that for each case, <span
+class="math inline">\(k\)</span>-many scores are calculated. All these
+scores are calculated from the data of the same case, so there are
+potentially dependencies between the scores. In fact, we expect there to
+be dependencies because the models are trained so that the score
+corresponding to the input class is relatively high and all the other
+scores are relatively low.</p>
+<p>The objective of this notebook is to investigate these expected
+dependencies between scores calculated from the same case.</p>
 </div>
-<div id="compact-summaries" class="section level2">
-<h2>Compact summaries</h2>
-<p>Show compact summaries of the variables, grouped by dataset and
-model.</p>
-<pre class="r"><code>d_scores |&gt;
-  dplyr::group_by(dataset, model) |&gt;
-  skimr::skim()</code></pre>
-<table>
-<caption>Data summary</caption>
-<tbody>
-<tr class="odd">
-<td align="left">Name</td>
-<td align="left">dplyr::group_by(d_scores,…</td>
-</tr>
-<tr class="even">
-<td align="left">Number of rows</td>
-<td align="left">17800</td>
-</tr>
-<tr class="odd">
-<td align="left">Number of columns</td>
-<td align="left">6</td>
-</tr>
-<tr class="even">
-<td align="left">_______________________</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Column type frequency:</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">factor</td>
-<td align="left">3</td>
-</tr>
-<tr class="odd">
-<td align="left">numeric</td>
-<td align="left">1</td>
-</tr>
-<tr class="even">
-<td align="left">________________________</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Group variables</td>
-<td align="left">dataset, model</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Variable type: factor</strong></p>
-<table>
-<colgroup>
-<col width="12%" />
-<col width="7%" />
-<col width="13%" />
-<col width="8%" />
-<col width="12%" />
-<col width="7%" />
-<col width="7%" />
-<col width="30%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">skim_variable</th>
-<th align="left">dataset</th>
-<th align="left">model</th>
-<th align="right">n_missing</th>
-<th align="right">complete_rate</th>
-<th align="left">ordered</th>
-<th align="right">n_unique</th>
-<th align="left">top_counts</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">case</td>
-<td align="left">UCR_14</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">1380</td>
-<td align="left">1: 4, 2: 4, 3: 4, 4: 4</td>
-</tr>
-<tr class="even">
-<td align="left">case</td>
-<td align="left">UCR_14</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">1380</td>
-<td align="left">1: 4, 2: 4, 3: 4, 4: 4</td>
-</tr>
-<tr class="odd">
-<td align="left">case</td>
-<td align="left">UCR_48</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">130</td>
-<td align="left">1: 26, 2: 26, 3: 26, 4: 26</td>
-</tr>
-<tr class="even">
-<td align="left">case</td>
-<td align="left">UCR_48</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">130</td>
-<td align="left">1: 26, 2: 26, 3: 26, 4: 26</td>
-</tr>
-<tr class="odd">
-<td align="left">class_id</td>
-<td align="left">UCR_14</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">4</td>
-<td align="left">0: 1400, 2: 1380, 1: 1372, 3: 1368</td>
-</tr>
-<tr class="even">
-<td align="left">class_id</td>
-<td align="left">UCR_14</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">4</td>
-<td align="left">0: 1400, 2: 1380, 1: 1372, 3: 1368</td>
-</tr>
-<tr class="odd">
-<td align="left">class_id</td>
-<td align="left">UCR_48</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">26</td>
-<td align="left">0: 130, 1: 130, 2: 130, 3: 130</td>
-</tr>
-<tr class="even">
-<td align="left">class_id</td>
-<td align="left">UCR_48</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">26</td>
-<td align="left">0: 130, 1: 130, 2: 130, 3: 130</td>
-</tr>
-<tr class="odd">
-<td align="left">score_id</td>
-<td align="left">UCR_14</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">4</td>
-<td align="left">0: 1380, 1: 1380, 2: 1380, 3: 1380</td>
-</tr>
-<tr class="even">
-<td align="left">score_id</td>
-<td align="left">UCR_14</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">4</td>
-<td align="left">0: 1380, 1: 1380, 2: 1380, 3: 1380</td>
-</tr>
-<tr class="odd">
-<td align="left">score_id</td>
-<td align="left">UCR_48</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">26</td>
-<td align="left">0: 130, 1: 130, 2: 130, 3: 130</td>
-</tr>
-<tr class="even">
-<td align="left">score_id</td>
-<td align="left">UCR_48</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="left">FALSE</td>
-<td align="right">26</td>
-<td align="left">0: 130, 1: 130, 2: 130, 3: 130</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Variable type: numeric</strong></p>
-<table>
-<colgroup>
-<col width="13%" />
-<col width="7%" />
-<col width="14%" />
-<col width="9%" />
-<col width="13%" />
-<col width="5%" />
-<col width="4%" />
-<col width="5%" />
-<col width="5%" />
-<col width="5%" />
-<col width="5%" />
-<col width="4%" />
-<col width="5%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">skim_variable</th>
-<th align="left">dataset</th>
-<th align="left">model</th>
-<th align="right">n_missing</th>
-<th align="right">complete_rate</th>
-<th align="right">mean</th>
-<th align="right">sd</th>
-<th align="right">p0</th>
-<th align="right">p25</th>
-<th align="right">p50</th>
-<th align="right">p75</th>
-<th align="right">p100</th>
-<th align="left">hist</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">score_val</td>
-<td align="left">UCR_14</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">-0.50</td>
-<td align="right">0.73</td>
-<td align="right">-2.32</td>
-<td align="right">-1.02</td>
-<td align="right">-0.80</td>
-<td align="right">-0.12</td>
-<td align="right">1.47</td>
-<td align="left">▁▇▅▂▂</td>
-</tr>
-<tr class="even">
-<td align="left">score_val</td>
-<td align="left">UCR_14</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">-0.50</td>
-<td align="right">0.68</td>
-<td align="right">-2.24</td>
-<td align="right">-0.99</td>
-<td align="right">-0.73</td>
-<td align="right">-0.13</td>
-<td align="right">1.44</td>
-<td align="left">▁▇▅▂▂</td>
-</tr>
-<tr class="odd">
-<td align="left">score_val</td>
-<td align="left">UCR_48</td>
-<td align="left">HDC_MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">-0.92</td>
-<td align="right">0.18</td>
-<td align="right">-1.57</td>
-<td align="right">-1.03</td>
-<td align="right">-0.96</td>
-<td align="right">-0.86</td>
-<td align="right">1.15</td>
-<td align="left">▃▇▁▁▁</td>
-</tr>
-<tr class="even">
-<td align="left">score_val</td>
-<td align="left">UCR_48</td>
-<td align="left">MINIROCKET</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">-0.92</td>
-<td align="right">0.20</td>
-<td align="right">-1.82</td>
-<td align="right">-1.04</td>
-<td align="right">-0.96</td>
-<td align="right">-0.85</td>
-<td align="right">1.18</td>
-<td align="left">▁▇▁▁▁</td>
-</tr>
-</tbody>
-</table>
-<p><em>That looks as expected.</em></p>
+<div id="scatterplots-of-within-case-scores" class="section level2">
+<h2>Scatterplots of within-case scores</h2>
+<p>We will investigate the dependency by plotting scatterplots, so we
+are limited to plotting only two of the <span
+class="math inline">\(k\)</span> scores on any one plot. We will map one
+score to the <span class="math inline">\(x\)</span> axis and the other
+to the <span class="math inline">\(y\)</span> axis, so call them <span
+class="math inline">\(score_x\)</span> and <span
+class="math inline">\(score_y\)</span> respectively. For simplicity,
+consider the case of a perfectly discriminating system. Assume that each
+score has the value 1 when the input is from the target class and has
+the value 0 when the input is from any other class.</p>
+<p>When the input is from <span class="math inline">\(class_x\)</span>,
+then <span class="math inline">\(score_x\)</span> will be 1 and all the
+other scores, including <span class="math inline">\(score_y\)</span>
+will be 0. This point will plot at position <span
+class="math inline">\((1,0)\)</span>. When the input is from <span
+class="math inline">\(class_y\)</span>, then <span
+class="math inline">\(score_y\)</span> will be 1 and all the other
+scores, including <span class="math inline">\(score_x\)</span> will be
+0. This point will plot at position <span
+class="math inline">\((0,1)\)</span>. When the input is from some class
+other than <span class="math inline">\(class_x\)</span> or <span
+class="math inline">\(class_y\)</span>, then both <span
+class="math inline">\(score_x\)</span> <span
+class="math inline">\(score_y\)</span> will be 0. This point will plot
+at position <span class="math inline">\((0,0)\)</span>. So the expected
+pattern is for points to be at the top-left, bottom-right, and
+bottom-left corners, respectively. We expect there to be no points at
+the top-right <span class="math inline">\((1,1)\)</span> corner.
+Assuming the scores are performing reasonably but not perfectly we
+expect the points to generally fall below the <span
+class="math inline">\((0,1)\)</span> to <span
+class="math inline">\((1,0)\)</span> diagonal.</p>
+<p>The following plots examine whether this pattern holds for a
+convenience sample of score pairs across data sets. The objective hear
+is to demonstrate the plausibility of the pattern rather than to perform
+diagnostics of the models, so the sample of pairs is not exhaustive.</p>
+<p>Create a function to produce the desired plot.</p>
+<p>Note that the scores in the sample datasets are not scaled into the
+range <span class="math inline">\([0,1]\)</span>. The plots are scaled
+to the actual ranges of the scores.</p>
+<pre class="r"><code>plot_score_pair_within_case &lt;- function(
+    d, # data frame - superset of data to be plotted, compatible with d_scores
+    subset_d, # character[1] - name of dataset to plot
+    subset_m, # character[1] - name of model to plot
+    score_x, # integer[1] - identifier of score_id to plot on x axis
+    score_y, # integer[1] - identifier of score_id to plot on y axis
+    legend = TRUE # logical[1] - whether to display the class_id legend
+    # value - ggplot plot object
+) {
+  d &lt;- d |&gt;
+    dplyr::filter(dataset == subset_d &amp; model == subset_m) |&gt;
+    tidyr::pivot_wider(
+      id_cols = c(dataset, model, case, class_id),
+      names_from = score_id,
+      values_from = score_val,
+      names_prefix = &quot;score_&quot;
+    )
+  
+  # calculate mean cases per class_id in data subset
+  n_per_class &lt;- nrow(d) / length(unique(d$class_id))
+  
+  # build plot
+  ggplot(d) +
+    geom_point(aes(x = {{score_x}}, y = {{score_y}}, colour = class_id)) +
+    geom_density2d(aes(x = {{score_x}}, y = {{score_y}}), show.legend = FALSE) +
+    guides(colour = ifelse(legend, &quot;legend&quot;, &quot;none&quot;)) +
+    coord_equal() +
+    labs(
+      title = glue::glue(&quot;Dataset: {subset_d}, Model: {subset_m}&quot;),
+      subtitle = glue::glue(&quot;Mean cases per class: {n_per_class}&quot;)
+    )
+}</code></pre>
+<div id="dataset-ucr_14-model-hdc_minirocket" class="section level3">
+<h3>Dataset UCR_14, Model HDC_MINIROCKET</h3>
+<p>There are 342 to 350 cases per class in this dataset. That’s a
+reasonable number of cases to be visualising distributions with.</p>
+<div id="score-0-score-2" class="section level4">
+<h4>Score 0, Score 2</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>This is possibly the closest to the perfect example, with three
+relatively discrete clusters.</li>
+</ul>
+</div>
+<div id="score-2-score-3" class="section level4">
+<h4>Score 2, Score 3</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Spreading along one edge. That is, one of the scores of interest is
+not well separable with respect to at least one of the classes not
+corresponding to either score of interest.</li>
+</ul>
+</div>
+<div id="score-0-score-3" class="section level4">
+<h4>Score 0, Score 3</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Spreading along both edges. That is, both the scores of interest are
+not well separable with respect to at least one of the classes not
+corresponding to either score of interest.</li>
+</ul>
+</div>
+<div id="score-1-score-3" class="section level4">
+<h4>Score 1, Score 3</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Spreading along the diagonal. That is, both the scores of interest
+are not well separable with respect to their corresponding classes. The
+two classes corresponding to the scores of interest are seen by their
+scores as effectively opposite ends of one dimension, rather than as
+separate dimensions.</li>
+</ul>
+</div>
+</div>
+<div id="dataset-ucr_14-model-minirocket" class="section level3">
+<h3>Dataset UCR_14, Model MINIROCKET</h3>
+<p>There are 342 to 350 cases per class in this dataset. That’s a
+reasonable number of cases to be visualising distributions with.</p>
+<div id="score-1-score-3-1" class="section level4">
+<h4>Score 1, Score 3</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Filling the entire are below the diagonal.</li>
+</ul>
+</div>
+</div>
+<div id="dataset-ucr_48-model-hdc_minirocket" class="section level3">
+<h3>Dataset UCR_48, Model HDC_MINIROCKET</h3>
+<p>There are only 5 cases per class in this dataset. That’s a heroic
+number of cases to attempt visualising distributions with. Also, because
+there are 26 classes, there are literally hundreds of combinations of
+two scores. So, the plots below are definitely a tiny subset of the
+subjectively interesting score combinations.</p>
+<div id="score-0-score-5" class="section level4">
+<h4>Score 0, Score 5</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Reasonable discriminability of both scores of interest.</li>
+</ul>
+</div>
+<div id="score-21-score-22" class="section level4">
+<h4>Score 21, Score 22</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>A pleasingly lower-off-diagonal pattern.</li>
+</ul>
+</div>
+<div id="score-1-score-4" class="section level4">
+<h4>Score 1, Score 4</h4>
+<p><img src="figure/04_score_dependencies.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li><em>Not</em> restricted to the lower-off-diagonal.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="discussion" class="section level2">
+<h2>Discussion</h2>
+<p>The scores generally abide by the expected within-case dependencies.
+I spotted a small number of score combinations that didn’t appear to
+show the expected dependency. However, these also appeared to be cases
+involving low discriminability, in which case the expected dependency
+structure is not really expected.</p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -1035,23 +845,25 @@ attached base packages:
 [1] stats     graphics  grDevices datasets  utils     methods   base     
 
 other attached packages:
-[1] skimr_2.1.5     forcats_0.5.2   dplyr_1.0.10    here_1.0.1     
-[5] workflowr_1.7.0
+[1] glue_1.6.2      ggplot2_3.4.0   rlang_1.0.6     tidyr_1.3.0    
+[5] forcats_0.5.2   dplyr_1.0.10    here_1.0.1      workflowr_1.7.0
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.10      bslib_0.4.2      compiler_4.2.2   pillar_1.8.1    
- [5] later_1.3.0      git2r_0.30.1     jquerylib_0.1.4  base64enc_0.1-3 
- [9] tools_4.2.2      getPass_0.2-2    digest_0.6.31    jsonlite_1.8.4  
-[13] evaluate_0.20    lifecycle_1.0.3  tibble_3.1.8     pkgconfig_2.0.3 
-[17] rlang_1.0.6      cli_3.6.0        rstudioapi_0.14  yaml_2.3.7      
-[21] xfun_0.36        fastmap_1.1.0    withr_2.5.0      repr_1.1.5      
-[25] httr_1.4.4       stringr_1.5.0    knitr_1.42       generics_0.1.3  
-[29] sass_0.4.5       fs_1.6.0         vctrs_0.5.2      tidyselect_1.2.0
-[33] rprojroot_2.0.3  glue_1.6.2       R6_2.5.1         processx_3.8.0  
-[37] fansi_1.0.4      rmarkdown_2.20   tidyr_1.3.0      purrr_1.0.1     
-[41] callr_3.7.3      magrittr_2.0.3   whisker_0.4.1    ellipsis_0.3.2  
-[45] ps_1.7.2         promises_1.2.0.1 htmltools_0.5.4  renv_0.16.0     
-[49] httpuv_1.6.8     utf8_1.2.2       stringi_1.7.12   cachem_1.0.6    </code></pre>
+ [1] tidyselect_1.2.0 xfun_0.36        bslib_0.4.2      purrr_1.0.1     
+ [5] colorspace_2.1-0 vctrs_0.5.2      generics_0.1.3   htmltools_0.5.4 
+ [9] yaml_2.3.7       utf8_1.2.2       isoband_0.2.7    jquerylib_0.1.4 
+[13] later_1.3.0      pillar_1.8.1     withr_2.5.0      lifecycle_1.0.3 
+[17] stringr_1.5.0    munsell_0.5.0    gtable_0.3.1     evaluate_0.20   
+[21] labeling_0.4.2   knitr_1.42       callr_3.7.3      fastmap_1.1.0   
+[25] httpuv_1.6.8     ps_1.7.2         fansi_1.0.4      highr_0.10      
+[29] Rcpp_1.0.10      renv_0.16.0      promises_1.2.0.1 scales_1.2.1    
+[33] cachem_1.0.6     jsonlite_1.8.4   farver_2.1.1     fs_1.6.0        
+[37] digest_0.6.31    stringi_1.7.12   processx_3.8.0   getPass_0.2-2   
+[41] rprojroot_2.0.3  grid_4.2.2       cli_3.6.0        tools_4.2.2     
+[45] magrittr_2.0.3   sass_0.4.5       tibble_3.1.8     whisker_0.4.1   
+[49] pkgconfig_2.0.3  MASS_7.3-58.2    ellipsis_0.3.2   rmarkdown_2.20  
+[53] httr_1.4.4       rstudioapi_0.14  R6_2.5.1         git2r_0.30.1    
+[57] compiler_4.2.2  </code></pre>
 </div>
 </div>
 

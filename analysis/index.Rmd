@@ -9,6 +9,7 @@ editor_options:
 ---
 
 This is the website for the research project "Multiclass AUC".
+See the [About](about.html) page for a summary description of this project.
 
 If you have cloned the project to a local computer this website is
 rendered in the `docs` subdirectory of the project directory.
@@ -16,8 +17,8 @@ rendered in the `docs` subdirectory of the project directory.
 If you are using `workflowr` to publish the research website it will
 also be rendered online to GitHub Pages.
 
-This page acts as a table of contents for the website. There are links
-to the web pages generated from the analysis notebooks.
+**This page acts as a table of contents for the website.**\
+There are links below to the web pages generated from the analysis notebooks.
 
 ------------------------------------------------------------------------
 
@@ -31,6 +32,10 @@ Check the ranges of the variables in the example data.
 
 ## [03_plot_independent_distributions](03_plot_independent_distributions.html) {.unnumbered}
 
-Check the ranges of the variables in the example data.
+Investigate the distribution of each class score in response to cases of each class.
+
+## [04_score_dependencies](04_score_dependencies.html) {.unnumbered}
+
+Investigate the dependencies between all the class scores calculated on the same case.
 
 

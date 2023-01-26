@@ -31,8 +31,6 @@ d_scores <- readRDS(file = here::here("output", "d_scores.RDS")) |>
 
 ## Introduction
 
-*This analysis is not complete. The text needs to be written.*
-
 Each score (corresponding to a unique value of `score_id`) can be thought of as a feature detector for its target class.
 The score should have a high value when the input case to the model is an exemplar of the target class and a low value when the input case to the model is an exemplar of a non-target class.
 The score can also be thought of as the "decision variable" from Signal detection Theory.
@@ -84,7 +82,7 @@ Plot the distributions separately for each combination of dataset and score ID t
 The distribution for the target class ID (corresponding to the score ID) should be higher than the distributions for the non-target class IDs
 
 Create a function to produce the desired plot.
-Each distribution is displayed as [box plot](https://en.wikipedia.org/wiki/Box_plot).
+Each distribution is displayed as a [box plot](https://en.wikipedia.org/wiki/Box_plot).
 
 ```{r}
 plot_indep_distn <- function(
