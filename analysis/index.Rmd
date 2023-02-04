@@ -38,4 +38,8 @@ Investigate the distribution of each class score in response to cases of each cl
 
 Investigate the dependencies between all the class scores calculated on the same case.
 
+## [05_score_calibration_1](05_score_calibration_1.html) {.unnumbered}
+
+Investigate the the scaling and calibration of the class scores (first attempt).
+
 
