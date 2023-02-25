@@ -43,3 +43,10 @@ Investigate the dependencies between all the class scores calculated on the same
 Investigate the the scaling and calibration of the class scores (first attempt).
 
 
+## [06_class_pair_synthetic_score](06_class_pair_synthetic_score.html) {.unnumbered}
+
+Introduce the concept of a synthetic score to combine the two class scores into a single score.
+
+
+
+

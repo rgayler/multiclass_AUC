@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Ross Gayler" />
+
+<meta name="date" content="2023-02-06" />
+
+<title>06_class_pair_synthetic_score.Rmd</title>
+
+<script src="site_libs/header-attrs-2.20/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Multiclass AUC</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/rgayler/multiclass_AUC">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">06_class_pair_synthetic_score.Rmd</h1>
+<h4 class="author">Ross Gayler</h4>
+<h4 class="date">2023-02-06</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2023-02-25
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>multiclass_AUC/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20230112code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20230112)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20230112code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20230112)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomrgaylermulticlassAUCtree17ee60bec73a200bb6d309514d6bbf192f5fcb0ctargetblank17ee60ba">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/rgayler/multiclass_AUC/tree/17ee60bec73a200bb6d309514d6bbf192f5fcb0c" target="_blank">17ee60b</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomrgaylermulticlassAUCtree17ee60bec73a200bb6d309514d6bbf192f5fcb0ctargetblank17ee60ba"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/rgayler/multiclass_AUC/tree/17ee60bec73a200bb6d309514d6bbf192f5fcb0c" target="_blank">17ee60b</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    renv/library/
+    Ignored:    renv/sandbox/
+    Ignored:    renv/staging/
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown
+(<code>analysis/06_class_pair_synthetic_score.Rmd</code>) and HTML
+(<code>docs/06_class_pair_synthetic_score.html</code>) files. If you’ve
+configured a remote Git repository (see <code>?wflow_git_remote</code>),
+click on the hyperlinks in the table below to view the files as they
+were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/rgayler/multiclass_AUC/blob/17ee60bec73a200bb6d309514d6bbf192f5fcb0c/analysis/06_class_pair_synthetic_score.Rmd" target="_blank">17ee60b</a>
+</td>
+<td>
+Ross Gayler
+</td>
+<td>
+2023-02-25
+</td>
+<td>
+Publish notebook 06
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/rgayler/multiclass_AUC/blob/04518051fad6d086f7b93335d321d6682dedc3ba/analysis/06_class_pair_synthetic_score.Rmd" target="_blank">0451805</a>
+</td>
+<td>
+Ross Gayler
+</td>
+<td>
+2023-02-24
+</td>
+<td>
+end 2023-02-24
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="dependencies" class="section level3">
+<h3>Dependencies</h3>
+<p>Read the saved example data.</p>
+<pre class="r"><code>d_scores &lt;- readRDS(file = here::here(&quot;output&quot;, &quot;d_scores.RDS&quot;)) |&gt;
+  # convert case, class_id and score_id to integer factors for safety &amp; better label order
+  dplyr::mutate(
+    case = forcats::as_factor(case),
+    class_id = forcats::as_factor(class_id),
+    score_id = forcats::as_factor(score_id)
+  )</code></pre>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Classic SDT has two classes discriminated by a single score.
+Multiclass classification typically has as many scores per observation
+as there are classes, with the observation being predicted as belonging
+to the class with the highest score. This leads to difficulty in mapping
+the multiclass scenario into the SDT conceptual framework.</p>
+<p>For each case characterised by the vector of observations <span
+class="math inline">\(x\)</span> there should be a score (<span
+class="math inline">\(s_i(x)\)</span>) for each class <span
+class="math inline">\(i\)</span>. Normatively, each class score (<span
+class="math inline">\(s_i(x)\)</span>) should be some fixed monotonic
+function of the probability (<span class="math inline">\(p( class = i
+\mid x)\)</span>) of the observation belonging to class <span
+class="math inline">\(i\)</span>. In principle, we can transform the
+score <span class="math inline">\(s_i(x)\)</span> to the estimated
+probability <span class="math inline">\(\hat{p}_i(class = i \mid
+x)\)</span> and use that estimated probability as the score. Note that I
+am explicitly stating that <span
+class="math inline">\(\hat{p}_i(x)\)</span> is derived from <span
+class="math inline">\(s_i(x)\)</span>. The literature tends to be
+somewhat sketchy about this and unclear as to whether the probabilities
+are derived from scores of the data or are somehow Platonic ideal
+probabilities that exist independent of the scores.</p>
+<p>The Hand and Till <span class="citation">(2001)</span> multiclass AUC
+approach works by breaking the multiclass problem into all pairs of
+classes to be discriminated, calculating a discriminability measure
+(AUC) for each pair of classes, then averaging that pairwise
+discriminability across the set of class pairs. For each pair of
+classes, <span class="math inline">\(i\)</span> and <span
+class="math inline">\(j\)</span>, they calculate the AUC for
+discriminating the classes separately by <span
+class="math inline">\(s_i(x)\)</span> and <span
+class="math inline">\(s_j(x)\)</span>, then average those two AUC values
+to get the AUC for the class pair. I believe that this approach, while
+useful, is not correct because the use of the scores in the AUC
+calculation does not correspond to the way they are used in the
+classifier. In classic SDT a single score is compared to a fixed
+threshold. This corresponds to the way the scores are used in the Hand
+and Till calculation. However, the classifiers we are interested in take
+two scores per case (one for each of the two classes in the pair) and
+assign the case to the class with the higher score. That is, the
+classification algorithm compares two scores to each other rather than
+one score to a fixed threshold.</p>
+<p>Another perspective on this point is that the AUC calculation
+conceptually involves independently selecting one case at random from
+each of the two classes and calculating the score for each case. The
+scores are independent in that they are based on separate cases. In
+contrast, the classifier as implemented takes one case (from some class)
+and calculates both scores from the same case. The scores are not
+independent because they are calculated from the same case.</p>
+<p>It can be demonstrated that considering the two scores in isolation
+does not guarantee a good assessment of the performance of the
+classifier. Assume that each of the class scores is reasonably
+discriminating of class membership. This ensures that the AUC calculated
+by the Hand and Till method is reasonably high. However, it is possible
+for the two class scores to be calibrated differently to the outcome.
+(We observed this empirically in an earlier notebook.) In the extreme
+case there could be no overlap between the ranges of the two scores, so
+that the score for one class was <em>always</em> greater than the score
+for the other class, regardless of the true class for the case. This
+would mean that the classifier, as implemented, was useless for
+discriminating the classes, even though each class score was reasonably
+discriminating.</p>
+<p>We need some way of assessing the performance of the classifier as
+implemented (i.e. depending on the comparison of the two class scores).
+We attempt to do this by creating a synthetic score that captures the
+relationship between the two class scores and allows us to apply the
+classic SDT conceptual model of, for each case, comparing the single
+synthetic score to a fixed threshold. The constraints are:</p>
+<ul>
+<li>For each case, combine the two class scores into a single synthetic
+score, and</li>
+<li>For each case, comparison of the synthetic score to a fixed
+threshold must yield the same assigned class that would have been
+obtained by comparing the two class scores.</li>
+</ul>
+<p>There is also another constraint (ability to simulate response bias)
+that we will deal with in detail in a later notebook.</p>
+<p>The objective of this notebook is to make some empirical attempts at
+creating a synthetic score to illustrate the issues that arise. This is
+not intended as an exhaustive analysis of the datasets, so the datasets
+and classes to analyse will be chosen for convenience.</p>
+</div>
+<div id="dataset-ucr_14-model-minirocket-classes-1-3"
+class="section level2">
+<h2>Dataset: UCR_14, Model: MINIROCKET, Classes: 1 &amp; 3</h2>
+<p>Analysis is more technically difficult with smaller numbers of cases,
+so choose UCR_14 rather than UCR_48. Analysis is more technically
+difficult with greater discriminability, so choose MINIROCKET rather
+than HDC_MINIROCKET.</p>
+<p>Choose classes 1 and 3 because an earlier notebook showed that these
+classes had lower separability compared to other pairs of classes. Also,
+it looked like class score 1 and class score 3 behaved differently,
+which is interesting.</p>
+<p>Restrict the data to only those cases belonging to class 1 or class
+3. Then reformat the data so that there is one row per case with both
+class scores present in the same row. Also, create the score difference
+(<code>score_diff</code>) as an obvious candidate for a synthetic
+score.</p>
+<pre class="r"><code>d &lt;- d_scores |&gt;
+  dplyr::filter(dataset == &quot;UCR_14&quot; &amp; model == &quot;MINIROCKET&quot;) |&gt;
+  dplyr::filter(class_id %in% c(1, 3) &amp; score_id %in% c(1, 3)) |&gt;
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_val,
+    names_prefix = &quot;score_&quot;
+  ) |&gt;
+  dplyr::mutate(score_diff = score_1 - score_3)
+summary(d)</code></pre>
+<pre><code>   dataset             model                case        class_id  
+ Length:685         Length:685         1      :  1   1      :343  
+ Class :character   Class :character   2      :  1   3      :342  
+ Mode  :character   Mode  :character   4      :  1   0      :  0  
+                                       5      :  1   2      :  0  
+                                       7      :  1   4      :  0  
+                                       8      :  1   5      :  0  
+                                       (Other):679   (Other):  0  
+    score_1            score_3          score_diff     
+ Min.   :-1.36849   Min.   :-1.5579   Min.   :-2.3371  
+ 1st Qu.:-0.54931   1st Qu.:-0.9123   1st Qu.:-0.9598  
+ Median :-0.06212   Median :-0.5472   Median : 0.4780  
+ Mean   :-0.06124   Mean   :-0.2890   Mean   : 0.2277  
+ 3rd Qu.: 0.48664   3rd Qu.: 0.4646   3rd Qu.: 1.3211  
+ Max.   : 1.44485   Max.   : 1.1561   Max.   : 2.9160  
+                                                       </code></pre>
+<p>First look at each of the two class scores (<code>score_1</code> and
+<code>score_3</code>) as predictors in isolation. This parallels their
+use in Hand and Till <span class="citation">(2001)</span>. Then look at
+some potential synthetic scores.</p>
+</div>
+<div id="score_1" class="section level2">
+<h2><code>score_1</code></h2>
+<p>Look at <code>score_1</code> as a predictor of <code>class_id</code>.
+This includes calculating the AUC of the score as a predictor of the
+class, using the equivalence to the Mann-Whitney-Wilcoxon test statistic
+noted in Hand and Till <span class="citation">(2001)</span>.</p>
+<p>Look at the distribution of <code>score_1</code> by
+<code>class_id</code>.</p>
+<pre class="r"><code>n_pairs &lt;- d$class_id |&gt; as.integer() |&gt; table() |&gt; prod() # get the number of pairs of class_i,class_j cases
+
+auc &lt;- wilcox.test(d$score_1[d$class_id == 1], d$score_1[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_density(aes(x = score_1, fill = class_id), alpha = 0.5) +
+  labs(
+    title = &quot;UCR_14 MINIROCKET, Classes 1 &amp; 3&quot;,
+    subtitle = glue::glue(&quot;Score 1, AUC = {round(auc, 3)}&quot;)
+  )</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Score 1 is a reasonable discriminator of class</li>
+<li>There is a lump of class 1 cases that have an intermediate (~ 0)
+value of <code>score_1</code>.</li>
+<li>There is a considerable lump of class 3 cases that have an
+intermediate (~ 0) value of <code>score_1</code>.</li>
+</ul>
+<p>Look at the calibration of <code>score_1</code> as a predictor of
+<code>class_id</code>.</p>
+<p>Fit a smooth calibration curve.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ s(score_1) + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ s(score_1) + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)  
+(Intercept)   0.7061     0.3374   2.093   0.0363 *
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(score_1) 4.92  5.889  112.1  &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+R-sq.(adj) =  0.466   Deviance explained = 43.3%
+UBRE = -0.19686  Scale est. = 1         n = 685</code></pre>
+<pre class="r"><code>plot(fit)</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The <em>y</em> axis is scaled as log-odds of being class 1 versus
+class 3.</p>
+<ul>
+<li>The calibration curve is monotonic.</li>
+<li>There is a flat segment covering the score range of approximately
+<span class="math inline">\([-0.5, 0.1]\)</span>. In this score range
+the probability of the case being from class 1 is constant despite the
+increasing score.</li>
+</ul>
+<p>Fit a linear calibration as being close enough for current
+purposes.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ score_1 + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ score_1 + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)   0.1805     0.1045   1.726   0.0843 .  
+score_1       3.2015     0.2349  13.631   &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+R-sq.(adj) =  0.438   Deviance explained = 39.2%
+UBRE = -0.15115  Scale est. = 1         n = 685</code></pre>
+<ul>
+<li>The slope is 3.2, that is, the log-odds of being from class 1
+increases by 3.2 per unit increase in score 1.</li>
+</ul>
+</div>
+<div id="score_3" class="section level2">
+<h2><code>score_3</code></h2>
+<p>Look at <code>score_3</code> as a predictor of
+<code>class_id</code>.</p>
+<pre class="r"><code>auc &lt;- wilcox.test(d$score_3[d$class_id == 3], d$score_3[d$class_id == 1])$statistic / n_pairs
+
+ggplot(d) +
+  geom_density(aes(x = score_3, fill = class_id), alpha = 0.5) +
+  labs(
+    title = &quot;UCR_14 MINIROCKET, Classes 1 &amp; 3&quot;,
+    subtitle = glue::glue(&quot;Score 3, AUC = {round(auc, 3)}&quot;)
+  )</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Score 3 is a good discriminator of class</li>
+<li>Score 3 is a better discriminator of classes 1 and 3 than score
+1.</li>
+<li>There is a lump of class 3 cases that have an intermediate (~ -0.5)
+value of <code>score_3</code>.</li>
+<li>Score 3 is probably a better discriminator than score 1 because
+there is no lump of off-target cases getting intermediate values of the
+score.</li>
+</ul>
+<p>Look at the calibration of <code>score_3</code> as a predictor of
+<code>class_id</code>.</p>
+<p>Fit a smooth calibration curve.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ s(score_3) + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ s(score_3) + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)   -5.523      4.881  -1.132    0.258
+
+Approximate significance of smooth terms:
+             edf Ref.df Chi.sq p-value    
+s(score_3) 3.639   4.26  59.84  &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+R-sq.(adj) =  0.711   Deviance explained = 68.1%
+UBRE = -0.54362  Scale est. = 1         n = 685</code></pre>
+<pre class="r"><code>plot(fit)</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The <em>y</em> axis is <em>still</em> scaled as log-odds of being
+class 1 versus class 3 (rather than class 3 versus class 1). It is
+convenient to do this because later we will be using both scores to
+predict one outcome, so the outcome may as well be the same for all
+models.</p>
+<ul>
+<li>The calibration curve has negative slope because we are using score
+3 to predict class 1. This does not cause any problems because the two
+outcome classes are complementary.</li>
+<li>The calibration curve is monotonic.</li>
+<li>There is a flat segment covering the score range of approximately
+<span class="math inline">\([-0.8, 0.5]\)</span>. In this score range
+the probability of the case being from class 1 is constant despite the
+increasing score.</li>
+</ul>
+<p>Fit a linear calibration as being close enough for current
+purposes.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ score_3 + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ score_3 + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  -2.8959     0.3499  -8.277   &lt;2e-16 ***
+score_3      -6.1673     0.5583 -11.047   &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+R-sq.(adj) =  0.695   Deviance explained = 65.9%
+UBRE = -0.52156  Scale est. = 1         n = 685</code></pre>
+<ul>
+<li>The slope is -6.2, that is, the log-odds of being from class 1
+decreases by 6.2 per unit increase in score 3.</li>
+<li>The magnitude of the slope is quite a different from score 1.
+<ul>
+<li>This implies that the calibrations of the scores are quite
+different,</li>
+<li>which further implies that the performance of the classifier as
+implemented is not as good as it could be, because score 1 and score 3
+are not measured on the same scale.</li>
+</ul></li>
+</ul>
+</div>
+<div id="score_diff" class="section level2">
+<h2><code>score_diff</code></h2>
+<p>The difference between the two scores looks like a reasonable attempt
+at a synthetic score. The sign of the difference indicates which score
+(out of score 1 and score 3) is greater. Comparing the score difference
+to a fixed threshold of zero leads to the same assigned class obtained
+by assigning the class corresponding to the larger score in the
+classifier as implemented.</p>
+<p>Look at <code>score_diff</code> as a predictor of
+<code>class_id</code>.</p>
+<pre class="r"><code>auc &lt;- wilcox.test(d$score_diff[d$class_id == 1], d$score_diff[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_vline(xintercept = 0) +
+  geom_density(aes(x = score_diff, fill = class_id), alpha = 0.5) +
+  labs(
+    title = &quot;UCR_14 MINIROCKET, Classes 1 &amp; 3&quot;,
+    subtitle = glue::glue(&quot;Score score_diff, AUC = {round(auc, 3)}&quot;)
+  )</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The calculated AUC accurately reflects the ability of
+<code>score_diff</code> to discriminate classes 1 and 3. However, I am
+not convinced that <code>score_diff</code> is the best synthetic score
+to summarise the behaviour of the classifier as implemented, because I
+suspect that the score difference does not accurately capture the
+behaviour of the classifier under varying response bias.</p>
+<ul>
+<li><code>score_diff</code> is a good discriminator of class</li>
+<li><code>score_diff</code> is a better discriminator of classes 1 and 3
+than score 1.</li>
+<li><code>score_diff</code> is a slightly worse discriminator of classes
+1 and 3 than score 3.
+<ul>
+<li>I suspect that this slight decrement in performance is due (at
+least, in part) to the differing calibration between the two class
+scores.</li>
+</ul></li>
+<li>There are lumps of class 1 and class 3 cases having intermediate
+score values.</li>
+<li>There is a sizeable fraction of the class 3 cases falling above the
+zero threshold. These cases are misclassified as belonging to class
+1.</li>
+</ul>
+<p>Look at the calibration of <code>score_diff</code> as a predictor of
+<code>class_id</code>.</p>
+<p>Fit a smooth calibration curve.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ s(score_diff) + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ s(score_diff) + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)   -1.765      1.727  -1.022    0.307
+
+Approximate significance of smooth terms:
+                edf Ref.df Chi.sq p-value    
+s(score_diff) 3.681  4.435  76.23  &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+R-sq.(adj) =  0.647   Deviance explained = 62.2%
+UBRE = -0.46178  Scale est. = 1         n = 685</code></pre>
+<pre class="r"><code>plot(fit)</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The <em>y</em> axis is scaled as log-odds of being class 1 versus
+class 3.</p>
+<ul>
+<li>The calibration curve has positive slope because the sign of the
+score indicates score 1 is greater than score 3 and we are predicting
+score 1.</li>
+<li>The calibration curve is monotonic.</li>
+<li>The slope is less in the score range of approximately <span
+class="math inline">\([0.3, 1]\)</span>.</li>
+</ul>
+<p>Fit a linear calibration as being close enough for current
+purposes.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ score_diff + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ score_diff + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  -1.2032     0.1842  -6.533 6.43e-11 ***
+score_diff    2.9417     0.2535  11.606  &lt; 2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+R-sq.(adj) =  0.637   Deviance explained = 60.5%
+UBRE = -0.44604  Scale est. = 1         n = 685</code></pre>
+<ul>
+<li>The slope is 2.9.
+<ul>
+<li>There is no point comparing this slope to the slopes of the other
+scores as it is not compared to the other scores in the classifier as
+implemented.</li>
+</ul></li>
+</ul>
+</div>
+<div id="score_1-score_3" class="section level2">
+<h2><code>score_1 + score_3</code></h2>
+<p>In this subsection I will construct a new synthetic score that is an
+optimal linear composite of score 1 and score 3. I will use logistic
+regression to find the weighting of the two scores that best predicts
+the true class. Note that this synthetic score is not guaranteed to
+emulate the classifier as implemented at the current response bias. The
+only weighted sum for which that is true is the score difference
+(weights of +1 and -1, and isomorphic transforms). The reason for
+constructing this score is to investigate whether it is possible to
+combine the class scores in a way which is more predictive than the
+individual scores and the classifier as implemented.</p>
+<p>Fit a model to predict the true class from a linear composite of
+score 1 and score 3.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ score_1 + score_3 + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ score_1 + score_3 + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  -2.7370     0.3554  -7.700 1.36e-14 ***
+score_1       0.8903     0.3901   2.282   0.0225 *  
+score_3      -5.7334     0.5805  -9.877  &lt; 2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+R-sq.(adj) =  0.698   Deviance explained = 66.5%
+UBRE = -0.52627  Scale est. = 1         n = 685</code></pre>
+<ul>
+<li>The deviance explained (66.5%) is slightly higher than for the
+linear fit to score 3 alone (65.9%) indicating that the combined model
+is slightly more predictive (as measured by goodness of fit).</li>
+</ul>
+<p>Add the synthetic score to the data frame.</p>
+<pre class="r"><code>d$score_sum &lt;- predict(fit)
+summary(d)</code></pre>
+<pre><code>   dataset             model                case        class_id  
+ Length:685         Length:685         1      :  1   1      :343  
+ Class :character   Class :character   2      :  1   3      :342  
+ Mode  :character   Mode  :character   4      :  1   0      :  0  
+                                       5      :  1   2      :  0  
+                                       7      :  1   4      :  0  
+                                       8      :  1   5      :  0  
+                                       (Other):679   (Other):  0  
+    score_1            score_3          score_diff        score_sum       
+ Min.   :-1.36849   Min.   :-1.5579   Min.   :-2.3371   Min.   :-10.4169  
+ 1st Qu.:-0.54931   1st Qu.:-0.9123   1st Qu.:-0.9598   1st Qu.: -5.8154  
+ Median :-0.06212   Median :-0.5472   Median : 0.4780   Median :  0.4405  
+ Mean   :-0.06124   Mean   :-0.2890   Mean   : 0.2277   Mean   : -1.1346  
+ 3rd Qu.: 0.48664   3rd Qu.: 0.4646   3rd Qu.: 1.3211   3rd Qu.:  2.8014  
+ Max.   : 1.44485   Max.   : 1.1561   Max.   : 2.9160   Max.   :  7.0613  
+                                                                          </code></pre>
+<p>Look at <code>score_sum</code> as a predictor of
+<code>class_id</code>.</p>
+<pre class="r"><code>auc &lt;- wilcox.test(d$score_sum[d$class_id == 1], d$score_sum[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_vline(xintercept = 0) +
+  geom_density(aes(x = score_sum, fill = class_id), alpha = 0.5) +
+  labs(
+    title = &quot;UCR_14 MINIROCKET, Classes 1 &amp; 3&quot;,
+    subtitle = glue::glue(&quot;Score score_sum, AUC = {round(auc, 3)}&quot;)
+  )</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li><code>score_sum</code> is a slightly better discriminator (by AUC)
+of classes 1 and 3 than score 3.</li>
+</ul>
+<p>Look at the calibration of <code>score_sum</code> as a predictor of
+<code>class_id</code>.</p>
+<p>Fit a smooth calibration curve.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ s(score_sum) + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ s(score_sum) + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)   -6.854      6.600  -1.038    0.299
+
+Approximate significance of smooth terms:
+               edf Ref.df Chi.sq p-value    
+s(score_sum) 3.739    4.3  51.56  &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+R-sq.(adj) =  0.714   Deviance explained = 68.8%
+UBRE = -0.55334  Scale est. = 1         n = 685</code></pre>
+<pre class="r"><code>plot(fit)</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The <em>y</em> axis is scaled as log-odds of being class 1 versus
+class 3.</p>
+<ul>
+<li>The calibration curve is monotonic.</li>
+<li>The slope is less in the score range of approximately <span
+class="math inline">\([0, 2]\)</span>.</li>
+</ul>
+<p>Fit a linear calibration as being close enough for current
+purposes.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ score_sum + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ score_sum + 1
+
+Parametric coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -8.842e-15  1.525e-01     0.0        1    
+score_sum    1.000e+00  9.171e-02    10.9   &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+R-sq.(adj) =  0.698   Deviance explained = 66.5%
+UBRE = -0.52918  Scale est. = 1         n = 685</code></pre>
+<ul>
+<li>The slope is 1 and intercept 0, because this model had been fit with
+a logistic regression and we are not performing this current regression
+on a different data set.</li>
+</ul>
+</div>
+<div id="sscore_1-score_3" class="section level2">
+<h2><code>s(score_1, score_3)</code></h2>
+<p>In this subsection I will construct a new synthetic score that is a
+smooth function of the joint values of score 1 and score 3. This will be
+even more predictive of the true class than the linear composite of the
+scores if there is an interaction present. The reason for constructing
+this score is to investigate whether it is possible to combine the class
+scores in a way which is more predictive than the classifier as
+implemented.</p>
+<p>Fit a model to predict the true class from a smooth joint function of
+score 1 and score 3.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ s(score_1, score_3) + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ s(score_1, score_3) + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)   -3.516      5.183  -0.678    0.498
+
+Approximate significance of smooth terms:
+                     edf Ref.df Chi.sq  p-value    
+s(score_1,score_3) 14.09  16.51   54.3 8.16e-06 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+R-sq.(adj) =  0.748   Deviance explained = 73.3%
+UBRE = -0.58612  Scale est. = 1         n = 685</code></pre>
+<pre class="r"><code>plot(fit)</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li>The deviance explained (73.3%) is higher than for the previous
+scores, indicating that the combined model is more predictive (as
+measured by goodness of fit).</li>
+</ul>
+<p>The plot shows the surface of log-odds of being class 1 versus class
+3. The solid black lines are contours of the surface. The dashed red and
+green lines are confidence intervals around the contours. The dots are
+the cases.</p>
+<ul>
+<li>For high values of score 3 (&gt; -0.5) the contours are
+approximately parallel to the score 1 axis, indicating that the log-odds
+of true class depends almost entirely on score 3 and does not vary with
+score 1.
+<ul>
+<li>Increasing score 3 indicates decreasing log-odds of being class
+1.</li>
+</ul></li>
+<li>For low values of score 3 (&lt; -0.5) the contour line slopes up to
+the right, indicating that the log-odds of true class depends on both
+score 3 and score 1.
+<ul>
+<li>Increasing score 3 indicates decreasing log-odds of being class
+1.</li>
+<li>Increasing score 1 indicates increasing log-odds of being class
+1.</li>
+</ul></li>
+</ul>
+<p>Add the synthetic score to the data frame.</p>
+<pre class="r"><code>d$score_intx &lt;- predict(fit)
+summary(d)</code></pre>
+<pre><code>   dataset             model                case        class_id  
+ Length:685         Length:685         1      :  1   1      :343  
+ Class :character   Class :character   2      :  1   3      :342  
+ Mode  :character   Mode  :character   4      :  1   0      :  0  
+                                       5      :  1   2      :  0  
+                                       7      :  1   4      :  0  
+                                       8      :  1   5      :  0  
+                                       (Other):679   (Other):  0  
+    score_1            score_3          score_diff        score_sum       
+ Min.   :-1.36849   Min.   :-1.5579   Min.   :-2.3371   Min.   :-10.4169  
+ 1st Qu.:-0.54931   1st Qu.:-0.9123   1st Qu.:-0.9598   1st Qu.: -5.8154  
+ Median :-0.06212   Median :-0.5472   Median : 0.4780   Median :  0.4405  
+ Mean   :-0.06124   Mean   :-0.2890   Mean   : 0.2277   Mean   : -1.1346  
+ 3rd Qu.: 0.48664   3rd Qu.: 0.4646   3rd Qu.: 1.3211   3rd Qu.:  2.8014  
+ Max.   : 1.44485   Max.   : 1.1561   Max.   : 2.9160   Max.   :  7.0613  
+                                                                          
+   score_intx      
+ Min.   :-24.9999  
+ 1st Qu.:-15.4271  
+ Median :  0.3357  
+ Mean   : -3.5157  
+ 3rd Qu.:  3.7874  
+ Max.   : 21.2899  
+                   </code></pre>
+<p>Look at <code>score_intx</code> as a predictor of
+<code>class_id</code>.</p>
+<pre class="r"><code>auc &lt;- wilcox.test(d$score_intx[d$class_id == 1], d$score_intx[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_vline(xintercept = 0) +
+  geom_density(aes(x = score_intx, fill = class_id), alpha = 0.5) +
+  labs(
+    title = &quot;UCR_14 MINIROCKET, Classes 1 &amp; 3&quot;,
+    subtitle = glue::glue(&quot;Score score_intx, AUC = {round(auc, 3)}&quot;)
+  )</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-19-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ul>
+<li><code>score_intx</code> is a better discriminator (by AUC) of
+classes 1 and 3 than the other scores examined.</li>
+<li>There are significant lumps of class 1 and class 3 cases in the
+ambiguous region around the threshold score value of zero.</li>
+</ul>
+<p>Look at the calibration of <code>score_intx</code> as a predictor of
+<code>class_id</code>.</p>
+<p>Fit a smooth calibration curve.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ s(score_intx) + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ s(score_intx) + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  -3.9604     0.6701   -5.91 3.42e-09 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Approximate significance of smooth terms:
+              edf Ref.df Chi.sq p-value    
+s(score_intx)   1      1  48.55  &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+R-sq.(adj) =  0.752   Deviance explained = 73.4%
+UBRE = -0.62509  Scale est. = 1         n = 685</code></pre>
+<pre class="r"><code>plot(fit)</code></pre>
+<p><img src="figure/06_class_pair_synthetic_score.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Fit a linear calibration as being close enough for current
+purposes.</p>
+<pre class="r"><code>fit &lt;- mgcv::gam(class_id == 1 ~ score_intx + 1, family = binomial(), data = d)
+summary(fit)</code></pre>
+<pre><code>
+Family: binomial 
+Link function: logit 
+
+Formula:
+class_id == 1 ~ score_intx + 1
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -0.06493    0.18045  -0.360    0.719    
+score_intx   1.10801    0.15787   7.018 2.24e-12 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+R-sq.(adj) =  0.752   Deviance explained = 73.4%
+UBRE = -0.62509  Scale est. = 1         n = 685</code></pre>
+<ul>
+<li>The slope is 1.1 (rather than 1) and intercept 0.
+<ul>
+<li>I suspect the calibration is not quite exact because there are some
+approximations in the fitting of the spline surface.</li>
+</ul></li>
+</ul>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>Calculating the AUC with respect to the class scores in isolation is
+not compatible with the way the scores are used in the classifier as
+implemented.</li>
+<li>The class scores in a class pair can differ considerably in how well
+they discriminate the classes.</li>
+<li>The class scores are not necessarily well calibrated to the log-odds
+of true class.</li>
+<li>The calibration can differ considerably between class scores.</li>
+<li>Comparison of class scores in the classifier as implemented can be
+less discriminating than the individual class scores.</li>
+<li>The average of the class score discriminability is not necessarily a
+good summary of the performance of the classifier as implemented.</li>
+<li>Class scores can be combined to give a synthetic score which can be
+compared to a fixed threshold, as in classic SDT.</li>
+<li>Some synthetic scores can be more discriminating than the class
+scores in isolation.</li>
+<li>Some synthetic scores can emulate the class assignments to cases of
+the classifier as implemented.</li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-handSimpleGeneralisationArea2001" class="csl-entry">
+Hand, David J., and Robert J. Till. 2001. <span>“A Simple Generalisation
+of the Area Under the ROC Curve for Multiple Class Classification
+Problems.”</span> <em>Machine Learning</em> 45: 171–86. <a
+href="https://doi.org/10.1023/A:1010920819831">https://doi.org/10.1023/A:1010920819831</a>.
+</div>
+</div>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.2.2 Patched (2022-11-10 r83330)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 22.04.2 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
+
+locale:
+ [1] LC_CTYPE=en_AU.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_AU.UTF-8        LC_COLLATE=en_AU.UTF-8    
+ [5] LC_MONETARY=en_AU.UTF-8    LC_MESSAGES=en_AU.UTF-8   
+ [7] LC_PAPER=en_AU.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_AU.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices datasets  utils     methods   base     
+
+other attached packages:
+[1] mgcv_1.8-41     nlme_3.1-161    glue_1.6.2      ggplot2_3.4.0  
+[5] tidyr_1.3.0     forcats_0.5.2   dplyr_1.0.10    here_1.0.1     
+[9] workflowr_1.7.0
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.2.0 xfun_0.36        bslib_0.4.2      purrr_1.0.1     
+ [5] splines_4.2.2    lattice_0.20-45  colorspace_2.1-0 vctrs_0.5.2     
+ [9] generics_0.1.3   htmltools_0.5.4  yaml_2.3.7       utf8_1.2.2      
+[13] rlang_1.0.6      jquerylib_0.1.4  later_1.3.0      pillar_1.8.1    
+[17] withr_2.5.0      lifecycle_1.0.3  stringr_1.5.0    munsell_0.5.0   
+[21] gtable_0.3.1     evaluate_0.20    labeling_0.4.2   knitr_1.42      
+[25] callr_3.7.3      fastmap_1.1.0    httpuv_1.6.8     ps_1.7.2        
+[29] fansi_1.0.4      highr_0.10       Rcpp_1.0.10      renv_0.16.0     
+[33] promises_1.2.0.1 scales_1.2.1     cachem_1.0.6     jsonlite_1.8.4  
+[37] farver_2.1.1     fs_1.6.0         digest_0.6.31    stringi_1.7.12  
+[41] processx_3.8.0   getPass_0.2-2    rprojroot_2.0.3  grid_4.2.2      
+[45] cli_3.6.0        tools_4.2.2      magrittr_2.0.3   sass_0.4.5      
+[49] tibble_3.1.8     whisker_0.4.1    pkgconfig_2.0.3  ellipsis_0.3.2  
+[53] Matrix_1.5-3     rmarkdown_2.20   httr_1.4.4       rstudioapi_0.14 
+[57] R6_2.5.1         git2r_0.30.1     compiler_4.2.2  </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3,h4",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "site_libs/mathjax-local/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

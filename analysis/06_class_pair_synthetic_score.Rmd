@@ -1,0 +1,418 @@
+---
+title: "06_class_pair_synthetic_score.Rmd"
+author: "Ross Gayler"
+date: "2023-02-06"
+output: 
+  workflowr::wflow_html:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+editor_options:
+  chunk_output_type: console
+  markdown: 
+    wrap: sentence
+bibliography: references.json
+---
+
+```{r setup, echo = FALSE,	message = FALSE, warning = FALSE}
+library(here) # relative file locations
+library(dplyr) # data manipulation
+library(forcats) # factor manipulation
+library(tidyr) # data tidying
+
+library(ggplot2) # plotting
+library(glue) # string interpolation
+library(mgcv) #GAMs
+
+logit2p <- function(l){exp(l)/(1 + exp(l))}
+```
+
+### Dependencies
+
+Read the saved example data.
+
+```{r}
+d_scores <- readRDS(file = here::here("output", "d_scores.RDS")) |>
+  # convert case, class_id and score_id to integer factors for safety & better label order
+  dplyr::mutate(
+    case = forcats::as_factor(case),
+    class_id = forcats::as_factor(class_id),
+    score_id = forcats::as_factor(score_id)
+  )
+```
+
+## Introduction
+
+Classic SDT has two classes discriminated by a single score.
+Multiclass classification typically has as many scores per observation as there are classes, with the observation being predicted as belonging to the class with the highest score.
+This leads to difficulty in mapping the multiclass scenario into the SDT conceptual framework.
+
+For each case characterised by the vector of observations $x$ there should be a score ($s_i(x)$) for each class $i$.
+Normatively, each class score ($s_i(x)$) should be some fixed monotonic function of the probability ($p( class = i \mid x)$) of the observation belonging to class $i$.
+In principle, we can transform the score $s_i(x)$ to the estimated probability $\hat{p}_i(class = i \mid x)$ and use that estimated probability as the score.
+Note that I am explicitly stating that $\hat{p}_i(x)$ is derived from $s_i(x)$.
+The literature tends to be somewhat sketchy about this and unclear as to whether the probabilities are derived from scores of the data or are somehow Platonic ideal probabilities that exist independent of the scores.
+
+The Hand and Till [-@handSimpleGeneralisationArea2001] multiclass AUC approach works by breaking the multiclass problem into all pairs of classes to be discriminated, calculating a discriminability measure (AUC) for each pair of classes, then averaging that pairwise discriminability across the set of class pairs.
+For each pair of classes, $i$ and $j$, they calculate the AUC for discriminating the classes separately by $s_i(x)$ and $s_j(x)$, then average those two AUC values to get the AUC for the class pair.
+I believe that this approach, while useful, is not correct because the use of the scores in the AUC calculation does not correspond to the way they are used in the classifier.
+In classic SDT a single score is compared to a fixed threshold.
+This corresponds to the way the scores are used in the Hand and Till calculation.
+However, the classifiers we are interested in take two scores per case (one for each of the two classes in the pair) and assign the case to the class with the higher score.
+That is, the classification algorithm compares two scores to each other rather than one score to a fixed threshold.
+
+Another perspective on this point is that the AUC calculation conceptually involves independently selecting one case at random from each of the two classes and calculating the score for each case.
+The scores are independent in that they are based on separate cases.
+In contrast, the classifier as implemented takes one case (from some class) and calculates both scores from the same case.
+The scores are not independent because they are calculated from the same case.
+
+It can be demonstrated that considering the two scores in isolation does not guarantee a good assessment of the performance of the classifier.
+Assume that each of the class scores is reasonably discriminating of class membership.
+This ensures that the AUC calculated by the Hand and Till method is reasonably high.
+However, it is possible for the two class scores to be calibrated differently to the outcome.
+(We observed this empirically in an earlier notebook.) In the extreme case there could be no overlap between the ranges of the two scores, so that the score for one class was *always* greater than the score for the other class, regardless of the true class for the case.
+This would mean that the classifier, as implemented, was useless for discriminating the classes, even though each class score was reasonably discriminating.
+
+We need some way of assessing the performance of the classifier as implemented (i.e. depending on the comparison of the two class scores).
+We attempt to do this by creating a synthetic score that captures the relationship between the two class scores and allows us to apply the classic SDT conceptual model of, for each case, comparing the single synthetic score to a fixed threshold.
+The constraints are:
+
+-   For each case, combine the two class scores into a single synthetic score, and
+-   For each case, comparison of the synthetic score to a fixed threshold must yield the same assigned class that would have been obtained by comparing the two class scores.
+
+There is also another constraint (ability to simulate response bias) that we will deal with in detail in a later notebook.
+
+The objective of this notebook is to make some empirical attempts at creating a synthetic score to illustrate the issues that arise.
+This is not intended as an exhaustive analysis of the datasets, so the datasets and classes to analyse will be chosen for convenience.
+
+## Dataset: UCR_14, Model: MINIROCKET, Classes: 1 & 3
+
+Analysis is more technically difficult with smaller numbers of cases, so choose UCR_14 rather than UCR_48.
+Analysis is more technically difficult with greater discriminability, so choose MINIROCKET rather than HDC_MINIROCKET.
+
+Choose classes 1 and 3 because an earlier notebook showed that these classes had lower separability compared to other pairs of classes.
+Also, it looked like class score 1 and class score 3 behaved differently, which is interesting.
+
+Restrict the data to only those cases belonging to class 1 or class 3.
+Then reformat the data so that there is one row per case with both class scores present in the same row.
+Also, create the score difference (`score_diff`) as an obvious candidate for a synthetic score.
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(1, 3) & score_id %in% c(1, 3)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_val,
+    names_prefix = "score_"
+  ) |>
+  dplyr::mutate(score_diff = score_1 - score_3)
+summary(d)
+```
+
+First look at each of the two class scores (`score_1` and `score_3`) as predictors in isolation.
+This parallels their use in Hand and Till [-@handSimpleGeneralisationArea2001].
+Then look at some potential synthetic scores.
+
+## `score_1`
+
+Look at `score_1` as a predictor of `class_id`.
+This includes calculating the AUC of the score as a predictor of the class, using the equivalence to the Mann-Whitney-Wilcoxon test statistic noted in Hand and Till [-@handSimpleGeneralisationArea2001].
+
+Look at the distribution of `score_1` by `class_id`.
+
+```{r}
+n_pairs <- d$class_id |> as.integer() |> table() |> prod() # get the number of pairs of class_i,class_j cases
+
+auc <- wilcox.test(d$score_1[d$class_id == 1], d$score_1[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_density(aes(x = score_1, fill = class_id), alpha = 0.5) +
+  labs(
+    title = "UCR_14 MINIROCKET, Classes 1 & 3",
+    subtitle = glue::glue("Score 1, AUC = {round(auc, 3)}")
+  )
+```
+
+-   Score 1 is a reasonable discriminator of class
+-   There is a lump of class 1 cases that have an intermediate (\~ 0) value of `score_1`.
+-   There is a considerable lump of class 3 cases that have an intermediate (\~ 0) value of `score_1`.
+
+Look at the calibration of `score_1` as a predictor of `class_id`.
+
+Fit a smooth calibration curve.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ s(score_1) + 1, family = binomial(), data = d)
+summary(fit)
+plot(fit)
+```
+
+The *y* axis is scaled as log-odds of being class 1 versus class 3.
+
+-   The calibration curve is monotonic.
+-   There is a flat segment covering the score range of approximately $[-0.5, 0.1]$. In this score range the probability of the case being from class 1 is constant despite the increasing score.
+
+Fit a linear calibration as being close enough for current purposes.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ score_1 + 1, family = binomial(), data = d)
+summary(fit)
+```
+
+-   The slope is 3.2, that is, the log-odds of being from class 1 increases by 3.2 per unit increase in score 1.
+
+## `score_3`
+
+Look at `score_3` as a predictor of `class_id`.
+
+```{r}
+auc <- wilcox.test(d$score_3[d$class_id == 3], d$score_3[d$class_id == 1])$statistic / n_pairs
+
+ggplot(d) +
+  geom_density(aes(x = score_3, fill = class_id), alpha = 0.5) +
+  labs(
+    title = "UCR_14 MINIROCKET, Classes 1 & 3",
+    subtitle = glue::glue("Score 3, AUC = {round(auc, 3)}")
+  )
+```
+
+-   Score 3 is a good discriminator of class
+-   Score 3 is a better discriminator of classes 1 and 3 than score 1.
+-   There is a lump of class 3 cases that have an intermediate (\~ -0.5) value of `score_3`.
+-   Score 3 is probably a better discriminator than score 1 because there is no lump of off-target cases getting intermediate values of the score.
+
+Look at the calibration of `score_3` as a predictor of `class_id`.
+
+Fit a smooth calibration curve.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ s(score_3) + 1, family = binomial(), data = d)
+summary(fit)
+plot(fit)
+```
+
+The *y* axis is *still* scaled as log-odds of being class 1 versus class 3 (rather than class 3 versus class 1).
+It is convenient to do this because later we will be using both scores to predict one outcome, so the outcome may as well be the same for all models.
+
+-   The calibration curve has negative slope because we are using score 3 to predict class 1. This does not cause any problems because the two outcome classes are complementary.
+-   The calibration curve is monotonic.
+-   There is a flat segment covering the score range of approximately $[-0.8, 0.5]$. In this score range the probability of the case being from class 1 is constant despite the increasing score.
+
+Fit a linear calibration as being close enough for current purposes.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ score_3 + 1, family = binomial(), data = d)
+summary(fit)
+```
+
+-   The slope is -6.2, that is, the log-odds of being from class 1 decreases by 6.2 per unit increase in score 3.
+-   The magnitude of the slope is quite a different from score 1.
+    -   This implies that the calibrations of the scores are quite different,
+    -   which further implies that the performance of the classifier as implemented is not as good as it could be, because score 1 and score 3 are not measured on the same scale.
+
+## `score_diff`
+
+The difference between the two scores looks like a reasonable attempt at a synthetic score.
+The sign of the difference indicates which score (out of score 1 and score 3) is greater.
+Comparing the score difference to a fixed threshold of zero leads to the same assigned class obtained by assigning the class corresponding to the larger score in the classifier as implemented.
+
+Look at `score_diff` as a predictor of `class_id`.
+
+```{r}
+auc <- wilcox.test(d$score_diff[d$class_id == 1], d$score_diff[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_vline(xintercept = 0) +
+  geom_density(aes(x = score_diff, fill = class_id), alpha = 0.5) +
+  labs(
+    title = "UCR_14 MINIROCKET, Classes 1 & 3",
+    subtitle = glue::glue("Score score_diff, AUC = {round(auc, 3)}")
+  )
+```
+
+The calculated AUC accurately reflects the ability of `score_diff` to discriminate classes 1 and 3.
+However, I am not convinced that `score_diff` is the best synthetic score to summarise the behaviour of the classifier as implemented, because I suspect that the score difference does not accurately capture the behaviour of the classifier under varying response bias.
+
+-   `score_diff` is a good discriminator of class
+-   `score_diff` is a better discriminator of classes 1 and 3 than score 1.
+-   `score_diff` is a slightly worse discriminator of classes 1 and 3 than score 3.
+    - I suspect that this slight decrement in performance is due (at least, in part) to the differing calibration between the two class scores.
+-   There are lumps of class 1 and class 3 cases having intermediate score values.
+-   There is a sizeable fraction of the class 3 cases falling above the zero threshold. These cases are misclassified as belonging to class 1.
+
+Look at the calibration of `score_diff` as a predictor of `class_id`.
+
+Fit a smooth calibration curve.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ s(score_diff) + 1, family = binomial(), data = d)
+summary(fit)
+plot(fit)
+```
+
+The *y* axis is scaled as log-odds of being class 1 versus class 3.
+
+-   The calibration curve has positive slope because the sign of the score indicates score 1 is greater than score 3 and we are predicting score 1.
+-   The calibration curve is monotonic.
+-   The slope is less in the score range of approximately $[0.3, 1]$.
+
+Fit a linear calibration as being close enough for current purposes.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ score_diff + 1, family = binomial(), data = d)
+summary(fit)
+```
+
+-   The slope is 2.9.
+    -   There is no point comparing this slope to the slopes of the other scores as it is not compared to the other scores in the classifier as implemented.
+
+## `score_1 + score_3`
+
+In this subsection I will construct a new synthetic score that is an optimal linear composite of score 1 and score 3.
+I will use logistic regression to find the weighting of the two scores that best predicts the true class.
+Note that this synthetic score is not guaranteed to emulate the classifier as implemented at the current response bias.
+The only weighted sum for which that is true is the score difference (weights of +1 and -1, and isomorphic transforms).
+The reason for constructing this score is to investigate whether it is possible to combine the class scores in a way which is more predictive than the individual scores and the classifier as implemented.
+
+Fit a model to predict the true class from a linear composite of score 1 and score 3.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ score_1 + score_3 + 1, family = binomial(), data = d)
+summary(fit)
+```
+
+-   The deviance explained (66.5%) is slightly higher than for the linear fit to score 3 alone (65.9%) indicating that the combined model is slightly more predictive (as measured by goodness of fit).
+
+Add the synthetic score to the data frame.
+
+```{r}
+d$score_sum <- predict(fit)
+summary(d)
+```
+
+Look at `score_sum` as a predictor of `class_id`.
+
+```{r}
+auc <- wilcox.test(d$score_sum[d$class_id == 1], d$score_sum[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_vline(xintercept = 0) +
+  geom_density(aes(x = score_sum, fill = class_id), alpha = 0.5) +
+  labs(
+    title = "UCR_14 MINIROCKET, Classes 1 & 3",
+    subtitle = glue::glue("Score score_sum, AUC = {round(auc, 3)}")
+  )
+```
+
+-   `score_sum` is a slightly better discriminator (by AUC) of classes 1 and 3 than score 3.
+
+Look at the calibration of `score_sum` as a predictor of `class_id`.
+
+Fit a smooth calibration curve.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ s(score_sum) + 1, family = binomial(), data = d)
+summary(fit)
+plot(fit)
+```
+
+The *y* axis is scaled as log-odds of being class 1 versus class 3.
+
+-   The calibration curve is monotonic.
+-   The slope is less in the score range of approximately $[0, 2]$.
+
+Fit a linear calibration as being close enough for current purposes.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ score_sum + 1, family = binomial(), data = d)
+summary(fit)
+```
+
+-   The slope is 1 and intercept 0, because this model had been fit with a logistic regression and we are not performing this current regression on a different data set.
+
+## `s(score_1, score_3)`
+
+In this subsection I will construct a new synthetic score that is a smooth function of the joint values of score 1 and score 3.
+This will be even more predictive of the true class than the linear composite of the scores if there is an interaction present.
+The reason for constructing this score is to investigate whether it is possible to combine the class scores in a way which is more predictive than the classifier as implemented.
+
+Fit a model to predict the true class from a smooth joint function of score 1 and score 3.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ s(score_1, score_3) + 1, family = binomial(), data = d)
+summary(fit)
+plot(fit)
+```
+
+-   The deviance explained (73.3%) is higher than for the previous scores, indicating that the combined model is more predictive (as measured by goodness of fit).
+
+The plot shows the surface of log-odds of being class 1 versus class 3.
+The solid black lines are contours of the surface.
+The dashed red and green lines are confidence intervals around the contours.
+The dots are the cases.
+
+-   For high values of score 3 (\> -0.5) the contours are approximately parallel to the score 1 axis, indicating that the log-odds of true class depends almost entirely on score 3 and does not vary with score 1.
+    -   Increasing score 3 indicates decreasing log-odds of being class 1.
+-   For low values of score 3 (\< -0.5) the contour line slopes up to the right, indicating that the log-odds of true class depends on both score 3 and score 1.
+    -   Increasing score 3 indicates decreasing log-odds of being class 1.
+    -   Increasing score 1 indicates increasing log-odds of being class 1.
+
+Add the synthetic score to the data frame.
+
+```{r}
+d$score_intx <- predict(fit)
+summary(d)
+```
+
+Look at `score_intx` as a predictor of `class_id`.
+
+```{r}
+auc <- wilcox.test(d$score_intx[d$class_id == 1], d$score_intx[d$class_id == 3])$statistic / n_pairs
+
+ggplot(d) +
+  geom_vline(xintercept = 0) +
+  geom_density(aes(x = score_intx, fill = class_id), alpha = 0.5) +
+  labs(
+    title = "UCR_14 MINIROCKET, Classes 1 & 3",
+    subtitle = glue::glue("Score score_intx, AUC = {round(auc, 3)}")
+  )
+```
+
+-   `score_intx` is a better discriminator (by AUC) of classes 1 and 3 than the other scores examined.
+-   There are significant lumps of class 1 and class 3 cases in the ambiguous region around the threshold score value of zero.
+
+Look at the calibration of `score_intx` as a predictor of `class_id`.
+
+Fit a smooth calibration curve.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ s(score_intx) + 1, family = binomial(), data = d)
+summary(fit)
+plot(fit)
+```
+
+Fit a linear calibration as being close enough for current purposes.
+
+```{r}
+fit <- mgcv::gam(class_id == 1 ~ score_intx + 1, family = binomial(), data = d)
+summary(fit)
+```
+
+-   The slope is 1.1 (rather than 1) and intercept 0.
+    -   I suspect the calibration is not quite exact because there are some approximations in the fitting of the spline surface.
+
+## Summary
+
+-   Calculating the AUC with respect to the class scores in isolation is not compatible with the way the scores are used in the classifier as implemented.
+-   The class scores in a class pair can differ considerably in how well they discriminate the classes.
+-   The class scores are not necessarily well calibrated to the log-odds of true class.
+-   The calibration can differ considerably between class scores.
+-   Comparison of class scores in the classifier as implemented can be less discriminating than the individual class scores.
+-   The average of the class score discriminability is not necessarily a good summary of the performance of the classifier as implemented.
+-   Class scores can be combined to give a synthetic score which can be compared to a fixed threshold, as in classic SDT.
+-   Some synthetic scores can be more discriminating than the class scores in isolation.
+-   Some synthetic scores can emulate the class assignments to cases of the classifier as implemented.
+
+## References

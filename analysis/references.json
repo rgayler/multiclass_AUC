@@ -1,0 +1,59 @@
+[
+    {
+        "id": "handSimpleGeneralisationArea2001",
+        "type": "article-journal",
+        "abstract": "The area under the ROC curve, or the equivalent Gini index, is a widely used measure of performance of supervised classification rules. It has the attractive property that it side-steps the need to specify the costs of the different kinds of misclassification. However, the simple form is only applicable to the case of two classes. We extend the definition to the case of more than two classes by averaging pairwise comparisons. This measure reduces to the standard form in the two class case. We compare its properties with the standard measure of proportion correct and an alternative definition of proportion correct based on pairwise comparison of classes for a simple artificial case and illustrate its application on eight data sets. On the data sets we examined, the measures produced similar, but not identical results, reflecting the different aspects of performance that they were measuring. Like the area under the ROC curve, the measure we propose is useful in those many situations where it is impossible to give costs for the different kinds of misclassification.",
+        "container-title": "Machine Learning",
+        "DOI": "10.1023/A:1010920819831",
+        "page": "171-186",
+        "title": "A Simple Generalisation of the Area Under the ROC Curve for Multiple Class Classification Problems",
+        "volume": "45",
+        "author": [
+            {
+                "family": "Hand",
+                "given": "David J."
+            },
+            {
+                "family": "Till",
+                "given": "Robert J."
+            }
+        ],
+        "issued": {
+            "date-parts": [
+                [
+                    "2001"
+                ]
+            ]
+        }
+    },
+    {
+        "URL": "https://www.researchgate.net/profile/Ross-Gayler/publication/237256980_Signal_Detection_for_Credit_Scoring_Practitioners/links/573eae8208aea45ee842f265/Signal-Detection-for-Credit-Scoring-Practitioners.pdf",
+        "author": [
+            {
+                "family": "Gayler",
+                "given": "Ross W."
+            }
+        ],
+        "event": "Credit Scoring and Credit Control VI",
+        "genre": "Conference talk",
+        "id": "gaylerSignalDetectionCredit1999",
+        "issued": {
+            "date-parts": [
+                [
+                    1999,
+                    9,
+                    30
+                ]
+            ]
+        },
+        "key": "JL52XUH7",
+        "language": "en",
+        "libraryid": "10",
+        "note": "Citation Key: gaylerSignalDetectionCredit1999",
+        "providerkey": "2509FBBE-5BB0-44C4-B119-6083A81ED673",
+        "publisher-place": "Edinburgh, Scotland, UK",
+        "rights": "All rights reserved",
+        "title": "Signal Detection for Credit Scoring Practitioners",
+        "type": "speech"
+    }
+]

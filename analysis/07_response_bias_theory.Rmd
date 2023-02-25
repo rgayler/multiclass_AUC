@@ -1,0 +1,445 @@
+---
+title: "06_response_bias_theory"
+author: "Ross Gayler"
+date: "2023-02-12"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+bibliography: references.json
+---
+
+```{r setup, echo = FALSE,	message = FALSE, warning = FALSE}
+library(tidyr) # data tidying
+library(dplyr) # data manipulation
+
+
+library(here) # relative file locations
+library(forcats) # factor manipulation
+library(ggplot2) # plotting
+library(glue) # string interpolation
+library(mgcv) #GAMs
+
+p2logit <- function(p) {log(p / (1 - p))}
+logit2p <- function(l){exp(l)/(1 + exp(l))}
+```
+
+## Introduction
+
+The purpose of this notebook is to review response bias in the context of [Signal Detection Theory](https://en.wikipedia.org/wiki/Detection_theory) and explore how it may be useful for practical implementation of multiclass AUC.
+
+A key feature of Signal Detection theory is that it separates the signal detection process from the response (decision making) process.
+
+The basic SDT model assumes that there are 2 classes to be discriminated.
+We are interested in the case where there are more than 2 classes to be discriminated.
+The Hand and Till [-@handSimpleGeneralisationArea2001] multiclass AUC approach works by breaking the multiclass problem into all pairs of classes to be discriminated, calculating a discriminability measure for each pair of classes, then aggregating that pairwise discriminability across the set of class pairs.
+Thus, we only need to consider the 2 class case.
+
+The basic 2 class SDT model assumes that each case is projected onto a one dimensional decision axis.
+This can be thought of as applying a scoring function that takes a vector of measurements for each case as input and generates a single score on the decision axis.
+There is a distribution on the decision axis of scores for the population of cases corresponding to each class.
+
+SDT characterisation of the detection process is essentially a characterisation of the difference between the class distributions.
+If the class distributions of scores are identical then the classes are not discriminable by the score.
+If the class distributions of scores have different locations on the decision axis then the classes are discriminable.
+Measures of discriminability are essentially measures of the size of the difference in location of the class distributions relative to the spread of the distributions.
+
+If we think of the class corresponding to the higher distribution on the decision axis as the "target" class then we can think of the scores on the decision axis as indicating the strength of the evidence for the case belonging to the target class.That is, the score should be a monotonic function of the probability of the case belonging to the target class, conditional on the measurement vector of the case.
+The most interesting and useful SDT scenarios are when the target and non-target score distributions overlap.
+Then cases from the different distributions can have the same score and therefore the same probability of belonging to the target class.
+
+The SDT analysis of the response process deals with how to assign cases to classes when they are not perfectly separated by the score.
+In this case it is not possible to perfectly accurately assign cases to classes.
+Some error is unavoidable, but we want to do the best that we can.
+This invokes the concept of rational decision making to determine how to maximise decide class membership in a way that maximises some objective.
+
+sadg $\underset{c \in C}{\operatorname{\argmax}}$ hahd hfsfkhfkh
+
+-   classic SDT response bias compares likelihood ratio to a threshold that incorporates costs and prior rates
+
+-   changing bias equivalent to changing the threshold
+
+-   equivalent to reassigning borderline cases, where borderline is defined with respect to (unidimensional) likelihood
+
+-   accuracy and cost sensitive are bases on argmax over expected cost
+
+-   expected cost depends on probabilities
+
+-   ignore all the likelihood stuff and go straight to probabilities/costs selection mechanism depends directly on probabilities/costs because and they are relatively accessible for argmax
+
+-   rational choice for accuracy maximisation requires scores be a fixed monotonic function of probability
+
+-   rational choice for payoff maximisation requires score be a fixed monotonic function of expected payoff
+
+-   expected payoff is product of probability and conditional payoff
+
+-   response bias can be adjusted by adjusting conditional payoff (higher conditional payoff implies higher expected payoff implies argmax acceptance of previously just rejected case)
+
+    -   AUC (conceptually) requires construction of ROC curve
+
+    -   ROC curve constructed by sweeping the response threshold
+
+        -   Easy to do if decision is based on threshold against one score
+
+        -   We have 2 scores and don't have a single score too be compared to threshold
+
+        -   So we implement response bias by adjusting expected payoff for a single class
+
+        -   We are only looking at pairs of classes, so bias in favour of one class is necessarily bias against the other class, so we only need to adjust the expected payoff for one class of the pair
+
+        -   The alternative would be to create one synthetic score that could be compared to a fixed threshold, but the synthetic score doesn't necessarily combine the information in the two scores as well (or poorly) as the argmax combination.
+            So doesn't necessarily give the same discrimination measure as the argmax response procedure
+
+-   Correct application of conditional payoff requires we know true probabilities (to within a fixed positive multiplier - this can give "probabilities" \> 1 but that overscaling can be regarded as a rescaling of the payoffs (assumed nonnegative).
+
+-   Scores from classifiers are not necessarily probabilities (more likely to be approximately some unknown linear transform of log-odds)
+
+-   Log-odds scores can be approximately converted to probabilities (logit to p assuming a specific calibration).
+
+    -   Doing one calibration on all the data pooled is less likely to run into the numerical problems that are more likely to be encountered performing a calibration for each separate class-score.
+
+    -   Doing one calibration on all the data pooled is not the "correct" model because there are multiple score observations per case and the outcomes and scores within case are not independent.
+        I certainly wouldn't believe any significance values, but I would take the estimated coefficients as reasonable.
+
+    -   OVA scores don't necessarily have the same calibration, but the scores are what drives argmax selection so we want to use a transformation that preserves the choices that would be made based on the scores.
+
+    -   Think of per-score calibration as a way of improving an OVA/OVO classifier
+
+    -   Calibrate all the classifier scores ignoring the score identity.
+        This gets the log-odds scores to approximate probabilities, ignoring the difference in calibration between class-scores
+
+-   For each class pair apply a range of multiplicative adjustments to one of the class predicted probabilities to simulate changing the response bias.
+
+    -   Get the 2x2 confusion matrix for each bias level, and extract (P(hit), P(FA)) as a point on the ROC curve.
+        Calculate AUC. That's your class-pair AUC to be averaged over all class pairs to get multiclass AUC.
+
+    -   It's possible (?) that the result may differ depending on which class the payoff adjustment is applied to because the adjustment is linear in probability, but the transformation from predicted log-odds to predicted probability is nonlinear and this may be especially problematic when the calibrations of the two scores are very different and when any predicted probabilities are very low or very high.
+
+        -   If this happens then the best way forward might be to apply the payoff adjustment to each class (one at a time) and average the results -0 call it a heuristic.
+
+```{r}
+
+
+d <- tidyr::expand_grid(
+  cal_p = seq(0.01, 0.99, by = 0.01), # calibrated probability
+  adj_mul = c(1/128, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32, 64, 128), # multiplicative adjustment,
+  uncal_slope = c(1/4, 1/2, 1, 2, 4), # slope of uncalibration transform
+  uncal_int = c(-4, -2, 0, 2, 4) # intercept of uncalibration transform
+) |>
+  dplyr::mutate(
+    cal_p_adj = cal_p * adj_mul, #adjusted calibrated probability
+    cal_lo = p2logit(cal_p), # calibrated log-odds
+    adj_add = log(adj_mul), #additive adjustment
+    cal_lo_adj = cal_lo + adj_add, # adjusted calibrated log-odds
+    cal_lo_adj_2p = logit2p(cal_lo_adj), # adjusted calibrated log-odds converted to probability
+    uncal_lo = uncal_slope * cal_lo + uncal_int, # uncalibrated log-odds
+    uncal_lo_adj = uncal_lo + adj_add, # adjusted uncalibrated log-odds
+    uncal_p = logit2p(uncal_lo), # uncalibrated probability
+    uncal_p_adj = uncal_p * adj_mul # adjusted uncalibrated log-odds
+  )
+
+d
+```
+
+```{r}
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = cal_p_adj, group = adj_mul))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = cal_p_adj, group = adj_mul)) +
+  scale_x_log10() + scale_y_log10()
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_lo, y = cal_lo_adj, group = adj_add))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = cal_lo_adj, group = adj_add))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = cal_lo_adj_2p, group = adj_add))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p_adj, y = cal_lo_adj_2p, group = adj_add))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p_adj, y = cal_lo_adj_2p, group = adj_add)) +
+  scale_x_log10()
+```
+
+```{r}
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = uncal_p_adj, group = adj_mul)) +
+  facet_grid(rows = vars(uncal_slope), cols = vars(uncal_int))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = uncal_p_adj, group = adj_mul)) +
+  scale_x_log10() + scale_y_log10() +
+  facet_grid(rows = vars(uncal_slope), cols = vars(uncal_int))
+```
+
+```{r}
+d |>
+  ggplot() +
+  geom_point(aes(x = cal_p, y = uncal_p_adj / cal_p, colour = as.factor(adj_mul))) +
+  scale_y_log10() +
+  facet_grid(rows = vars(uncal_slope), cols = vars(uncal_int))
+
+d |>
+  ggplot() +
+  geom_line(aes(x = cal_p, y = uncal_p_adj, group = adj_mul)) +
+  scale_x_log10() + scale_y_log10() +
+  facet_grid(rows = vars(uncal_slope), cols = vars(uncal_int))
+```
+
+### Dependencies
+
+Read the saved example data.
+
+```{r}
+d_scores <- readRDS(file = here::here("output", "d_scores.RDS")) |>
+  # convert case, class_id and score_id to integer factors for safety & better label order
+  dplyr::mutate(
+    case = forcats::as_factor(case),
+    class_id = forcats::as_factor(class_id),
+    score_id = forcats::as_factor(score_id)
+  )
+```
+
+```{r}
+d_scores |>
+  dplyr::group_by(dataset, model) |>
+  dplyr::summarise(
+    score_mn = mean(score_val),
+    score_sd = sd(score_val)
+  )
+
+fit <- mgcv::gam(score_id == class_id ~ dataset:model:score_val + dataset:model - 1, family = binomial(), data = d_scores)
+summary(fit)
+
+# get fitted prediction and standard errors for each case
+pred <- predict(fit)
+d_scores <- d_scores |>
+  dplyr::mutate(
+    score_lo = pred,
+    score_p = logit2p(score_lo)
+  )
+summary(d_scores)
+```
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(0, 1) & score_id %in% c(0, 1)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_0 + score_p_1,
+    score_ratio_log2 = log2(score_p_0 / score_p_1)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_0))  
+ggplot(d) + geom_density(aes(x = score_p_1))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "HDC_MINIROCKET") |>
+  dplyr::filter(class_id %in% c(0, 1) & score_id %in% c(0, 1)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_0 + score_p_1,
+    score_ratio_log2 = log2(score_p_0 / score_p_1)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_0))  
+ggplot(d) + geom_density(aes(x = score_p_1))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(0, 2) & score_id %in% c(0, 2)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_0 + score_p_2,
+    score_ratio_log2 = log2(score_p_0 / score_p_2)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_0))  
+ggplot(d) + geom_density(aes(x = score_p_2))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(0, 3) & score_id %in% c(0, 3)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_0 + score_p_3,
+    score_ratio_log2 = log2(score_p_0 / score_p_3)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_0))  
+ggplot(d) + geom_density(aes(x = score_p_3))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(1, 2) & score_id %in% c(1, 2)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_1 + score_p_2,
+    score_ratio_log2 = log2(score_p_1 / score_p_2)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_1))  
+ggplot(d) + geom_density(aes(x = score_p_2))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(1, 3) & score_id %in% c(1, 3)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_1 + score_p_3,
+    score_ratio_log2 = log2(score_p_1 / score_p_3)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_1))  
+ggplot(d) + geom_density(aes(x = score_p_3))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+
+```{r}
+d <- d_scores |>
+  dplyr::filter(dataset == "UCR_14" & model == "MINIROCKET") |>
+  dplyr::filter(class_id %in% c(2, 3) & score_id %in% c(2, 3)) |>
+  tidyr::pivot_wider(
+    id_cols = c(dataset, model, case, class_id),
+    names_from = score_id,
+    values_from = score_p,
+    names_prefix = "score_p_"
+  ) |>
+  dplyr::mutate(
+    score_sum = score_p_2 + score_p_3,
+    score_ratio_log2 = log2(score_p_2 / score_p_3)
+    )
+summary(d)
+  
+ggplot(d) + geom_density(aes(x = score_p_2))  
+ggplot(d) + geom_density(aes(x = score_p_3))
+  
+ggplot(d) + geom_density(aes(x = score_sum))
+ggplot(d) + geom_density(aes(x = score_ratio_log2))
+ggplot(d) + geom_density(aes(x = score_ratio_log2, fill = class_id), alpha = 0.5)
+
+ggplot(d, aes(x = score_ratio_log2, y = score_sum, colour = class_id)) + 
+  geom_density2d(alpha = 0.5) +
+  geom_point(alpha = 0.5)
+```
+
+
+
+
+
+## References
